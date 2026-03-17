@@ -1,0 +1,6 @@
+doug-plan
+*.test
+*.out
+.DS_Store
+
+.doug/
