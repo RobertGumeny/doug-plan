@@ -33,9 +33,10 @@ Replace `robertgumeny` if forked. All internal imports use this path.
 doug-plan/
 ├── cmd/
 │   ├── root.go         # rootCmd definition and Execute()
-│   ├── init.go         # init subcommand — project scaffolding stub
+│   ├── init.go         # init subcommand — project scaffolding
 │   └── run.go          # run subcommand — orchestration stub
 ├── internal/
+│   ├── scaffold/       # scaffold.Run() — creates .doug/, doug-plan.yaml, AGENTS.md, agent skill dirs
 │   ├── config/         # (stub) OrchestratorConfig, LoadConfig
 │   ├── orchestrator/   # (stub) task orchestration logic
 │   ├── agent/          # (stub) agent session management

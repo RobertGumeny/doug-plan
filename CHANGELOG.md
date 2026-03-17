@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat: implement `doug-plan init --agents` command with project scaffolding
 
 ### Changed
+- docs(kb): create README.md index and update infrastructure/go.md project structure
 
 ### Fixed
 
