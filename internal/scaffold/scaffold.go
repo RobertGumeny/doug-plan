@@ -59,8 +59,7 @@ func Run(opts Options) error {
 	}
 
 	// doug-plan.yaml config
-	agentStr := strings.Join(opts.Agents, ", ")
-	if err := writeFile("doug-plan.yaml", buildConfig(agentStr)); err != nil {
+	if err := writeFile("doug-plan.yaml", buildConfig(opts.Agents)); err != nil {
 		return err
 	}
 
@@ -77,6 +76,20 @@ func Run(opts Options) error {
 				return err
 			}
 			if err := writeFile(".claude/skills/.gitkeep", ""); err != nil {
+				return err
+			}
+		case "codex":
+			if err := mkdir(".codex/skills"); err != nil {
+				return err
+			}
+			if err := writeFile(".codex/skills/.gitkeep", ""); err != nil {
+				return err
+			}
+		case "gemini":
+			if err := mkdir(".gemini/skills"); err != nil {
+				return err
+			}
+			if err := writeFile(".gemini/skills/.gitkeep", ""); err != nil {
 				return err
 			}
 		}
@@ -117,12 +130,20 @@ func ParseAgents(raw string) []string {
 	return out
 }
 
-func buildConfig(agentStr string) string {
-	return fmt.Sprintf(`agent: %s
-approval_mode: full
-skill_paths:
-  - .claude/skills
-`, agentStr)
+func buildConfig(agents []string) string {
+	var skillPaths strings.Builder
+	for _, agent := range agents {
+		switch agent {
+		case "claude":
+			skillPaths.WriteString("  - .claude/skills\n")
+		case "codex":
+			skillPaths.WriteString("  - .codex/skills\n")
+		case "gemini":
+			skillPaths.WriteString("  - .gemini/skills\n")
+		}
+	}
+	agentStr := strings.Join(agents, ", ")
+	return fmt.Sprintf("agent: %s\napproval_mode: full\nskill_paths:\n%s", agentStr, skillPaths.String())
 }
 
 const activeStepStub = `# Active Step

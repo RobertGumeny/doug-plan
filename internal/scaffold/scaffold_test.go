@@ -41,6 +41,82 @@ func TestRun_CreatesExpectedFiles(t *testing.T) {
 	}
 }
 
+func TestRun_CodexAgent(t *testing.T) {
+	dir := t.TempDir()
+	var out strings.Builder
+
+	err := scaffold.Run(scaffold.Options{
+		ProjectRoot: dir,
+		Agents:      []string{"codex"},
+		Out:         &out,
+	})
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(dir, ".codex/skills/.gitkeep")); os.IsNotExist(err) {
+		t.Error("expected .codex/skills/.gitkeep to be created")
+	}
+	if _, err := os.Stat(filepath.Join(dir, ".claude/skills")); !os.IsNotExist(err) {
+		t.Error("expected .claude/skills NOT to be created for codex-only init")
+	}
+}
+
+func TestRun_GeminiAgent(t *testing.T) {
+	dir := t.TempDir()
+	var out strings.Builder
+
+	err := scaffold.Run(scaffold.Options{
+		ProjectRoot: dir,
+		Agents:      []string{"gemini"},
+		Out:         &out,
+	})
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(dir, ".gemini/skills/.gitkeep")); os.IsNotExist(err) {
+		t.Error("expected .gemini/skills/.gitkeep to be created")
+	}
+	if _, err := os.Stat(filepath.Join(dir, ".claude/skills")); !os.IsNotExist(err) {
+		t.Error("expected .claude/skills NOT to be created for gemini-only init")
+	}
+}
+
+func TestRun_MultipleAgents(t *testing.T) {
+	dir := t.TempDir()
+	var out strings.Builder
+
+	err := scaffold.Run(scaffold.Options{
+		ProjectRoot: dir,
+		Agents:      []string{"claude", "codex", "gemini"},
+		Out:         &out,
+	})
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	for _, rel := range []string{
+		".claude/skills/.gitkeep",
+		".codex/skills/.gitkeep",
+		".gemini/skills/.gitkeep",
+	} {
+		if _, err := os.Stat(filepath.Join(dir, rel)); os.IsNotExist(err) {
+			t.Errorf("expected file not created: %s", rel)
+		}
+	}
+
+	config, err := os.ReadFile(filepath.Join(dir, "doug-plan.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{".claude/skills", ".codex/skills", ".gemini/skills"} {
+		if !strings.Contains(string(config), path) {
+			t.Errorf("expected doug-plan.yaml to contain skill path %q", path)
+		}
+	}
+}
+
 func TestRun_SkipsExistingFiles(t *testing.T) {
 	dir := t.TempDir()
 
