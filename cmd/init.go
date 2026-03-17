@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"fmt"
+	"os"
 
+	"github.com/robertgumeny/doug-plan/internal/scaffold"
 	"github.com/spf13/cobra"
 )
 
@@ -12,8 +13,15 @@ var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize a new doug-plan project",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("doug-plan init: not yet implemented")
-		return nil
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		return scaffold.Run(scaffold.Options{
+			ProjectRoot: cwd,
+			Agents:      scaffold.ParseAgents(agents),
+			Out:         os.Stdout,
+		})
 	},
 }
 

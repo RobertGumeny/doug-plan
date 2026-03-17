@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- feat: implement `doug-plan init --agents` command with project scaffolding
 
 ### Changed
 
