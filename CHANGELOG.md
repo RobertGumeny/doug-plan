@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- feat: add optional research report ingestion to Discovery skill
 - feat: add discovery skill template for guided interview → VISION.md workflow
 
 ### Changed

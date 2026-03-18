@@ -31,6 +31,7 @@ func TestRun_CreatesExpectedFiles(t *testing.T) {
 		"CLAUDE.md",
 		".claude/settings.json",
 		".claude/skills/research/SKILL.md",
+		".claude/skills/discovery/SKILL.md",
 	}
 	for _, rel := range expected {
 		path := filepath.Join(dir, rel)
@@ -61,6 +62,9 @@ func TestRun_CodexAgent(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(dir, ".codex", "skills", "research", "SKILL.md")); os.IsNotExist(err) {
 		t.Error("expected .codex skill template to be created")
 	}
+	if _, err := os.Stat(filepath.Join(dir, ".codex", "skills", "discovery", "SKILL.md")); os.IsNotExist(err) {
+		t.Error("expected .codex discovery skill template to be created")
+	}
 	if _, err := os.Stat(filepath.Join(dir, ".claude", "skills")); !os.IsNotExist(err) {
 		t.Error("expected .claude/skills NOT to be created for codex-only init")
 	}
@@ -81,6 +85,9 @@ func TestRun_GeminiAgent(t *testing.T) {
 
 	if _, err := os.Stat(filepath.Join(dir, ".gemini", "skills", "research", "SKILL.md")); os.IsNotExist(err) {
 		t.Error("expected .gemini skill template to be created")
+	}
+	if _, err := os.Stat(filepath.Join(dir, ".gemini", "skills", "discovery", "SKILL.md")); os.IsNotExist(err) {
+		t.Error("expected .gemini discovery skill template to be created")
 	}
 	if _, err := os.Stat(filepath.Join(dir, ".claude", "skills")); !os.IsNotExist(err) {
 		t.Error("expected .claude/skills NOT to be created for gemini-only init")
@@ -104,6 +111,9 @@ func TestRun_MultipleAgents(t *testing.T) {
 		".claude/skills/research/SKILL.md",
 		".codex/skills/research/SKILL.md",
 		".gemini/skills/research/SKILL.md",
+		".claude/skills/discovery/SKILL.md",
+		".codex/skills/discovery/SKILL.md",
+		".gemini/skills/discovery/SKILL.md",
 	} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); os.IsNotExist(err) {
 			t.Errorf("expected file not created: %s", rel)
@@ -172,6 +182,7 @@ func TestRun_NoAgentsDefaultsToClaude(t *testing.T) {
 		"AGENTS.md",
 		"CLAUDE.md",
 		".claude/skills/research/SKILL.md",
+		".claude/skills/discovery/SKILL.md",
 	} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); os.IsNotExist(err) {
 			t.Errorf("expected file not created: %s", rel)

@@ -12,8 +12,8 @@ This skill runs a structured interview with the user and synthesizes the answers
 Before asking questions, gather any context already available:
 
 1. If `.doug/plan/ACTIVE_STEP.md` exists, read it for the planning brief.
-2. If `.doug/plans/research/` exists, list any files inside and read the ones most relevant to the project.
-3. Note every piece of context that can pre-fill or inform interview answers.
+2. If `.doug/plans/research/` exists, list its contents. Read every `.md` file found there in full. If the directory does not exist or contains no Markdown files, proceed without it.
+3. Note every piece of context gathered above that can pre-fill or inform interview answers.
 
 ## Phase 2: Guided Interview
 
@@ -86,7 +86,7 @@ Using the interview answers, draft a `VISION.md` with the structure below. Every
 
 ## Background
 
-[Prior work, existing systems, research reports, or relevant context]
+[Prior work, existing systems, and relevant context. If research reports were loaded in Phase 1, summarize their key findings here.]
 ```
 
 ## Phase 4: Review and Confirm
