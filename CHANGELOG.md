@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- feat: EPIC-2-003 — agent invocation, result parsing, outcome dispatch
 - feat: EPIC-2-002 — implement ACTIVE_STEP.md write/read/archive lifecycle
 - feat: EPIC-2-001 — artifact-presence state detection
 - feat: add GitHub Actions release workflow for cross-platform binaries (macOS arm64, macOS amd64, Linux amd64)

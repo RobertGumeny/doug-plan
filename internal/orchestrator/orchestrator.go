@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/robertgumeny/doug-plan/internal/agent"
+	"github.com/robertgumeny/doug-plan/internal/config"
 	"github.com/robertgumeny/doug-plan/internal/state"
 )
 
@@ -16,7 +17,8 @@ type Options struct {
 }
 
 // Run infers the current pipeline position from artifacts on disk,
-// writes an ACTIVE_STEP.md briefing, and archives it after the step completes.
+// writes an ACTIVE_STEP.md briefing, invokes the configured agent,
+// parses the result, dispatches by outcome, and archives the step file.
 func Run(opts Options) error {
 	plansDir := filepath.Join(opts.ProjectRoot, ".doug", "plans")
 
@@ -36,8 +38,37 @@ func Run(opts Options) error {
 
 	fmt.Fprintf(opts.Out, "Pipeline entry point: %s\n", stage)
 
+	cfg, err := config.Load(opts.ProjectRoot)
+	if err != nil {
+		return fmt.Errorf("loading config: %w", err)
+	}
+
+	args, err := cfg.AgentCommand()
+	if err != nil {
+		return fmt.Errorf("resolving agent command: %w", err)
+	}
+
+	fmt.Fprintf(opts.Out, "Invoking agent: %s\n", args[0])
+	if err := agent.Invoke(opts.ProjectRoot, args); err != nil {
+		return fmt.Errorf("agent invocation: %w", err)
+	}
+
+	outcome, err := agent.ParseResult(opts.ProjectRoot)
+	if err != nil {
+		return fmt.Errorf("parsing agent result: %w", err)
+	}
+
 	if err := agent.ArchiveStep(opts.ProjectRoot, stage); err != nil {
 		return fmt.Errorf("archiving ACTIVE_STEP.md: %w", err)
+	}
+
+	switch outcome {
+	case agent.OutcomeSuccess:
+		fmt.Fprintf(opts.Out, "Step %s completed successfully.\n", stage)
+	case agent.OutcomeFailure:
+		return fmt.Errorf("step %s failed: agent reported FAILURE", stage)
+	case agent.OutcomeRetry:
+		fmt.Fprintf(opts.Out, "Step %s requesting retry.\n", stage)
 	}
 
 	return nil
