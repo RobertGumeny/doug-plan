@@ -5,6 +5,7 @@ import (
 	"io"
 	"path/filepath"
 
+	"github.com/robertgumeny/doug-plan/internal/agent"
 	"github.com/robertgumeny/doug-plan/internal/state"
 )
 
@@ -14,8 +15,8 @@ type Options struct {
 	Out         io.Writer
 }
 
-// Run infers the current pipeline position from artifacts on disk and
-// reports the entry point. No state file is read or written.
+// Run infers the current pipeline position from artifacts on disk,
+// writes an ACTIVE_STEP.md briefing, and archives it after the step completes.
 func Run(opts Options) error {
 	plansDir := filepath.Join(opts.ProjectRoot, ".doug", "plans")
 
@@ -29,6 +30,15 @@ func Run(opts Options) error {
 		return nil
 	}
 
+	if err := agent.WriteStep(opts.ProjectRoot, stage); err != nil {
+		return fmt.Errorf("writing ACTIVE_STEP.md: %w", err)
+	}
+
 	fmt.Fprintf(opts.Out, "Pipeline entry point: %s\n", stage)
+
+	if err := agent.ArchiveStep(opts.ProjectRoot, stage); err != nil {
+		return fmt.Errorf("archiving ACTIVE_STEP.md: %w", err)
+	}
+
 	return nil
 }
