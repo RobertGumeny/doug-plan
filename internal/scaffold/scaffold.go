@@ -3,9 +3,13 @@ package scaffold
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/robertgumeny/doug-plan/internal/layout"
+	"github.com/robertgumeny/doug-plan/internal/templates"
 )
 
 // Options holds the configuration for project scaffolding.
@@ -16,83 +20,35 @@ type Options struct {
 }
 
 // Run creates the expected directories and files for a new doug-plan project.
-// Files that already exist are skipped without error.
+// If .doug/plan/doug-plan.yaml already exists, the project is treated as already initialized.
 func Run(opts Options) error {
 	var created, skipped []string
 
-	mkdir := func(rel string) error {
-		path := filepath.Join(opts.ProjectRoot, rel)
-		if err := os.MkdirAll(path, 0755); err != nil {
-			return fmt.Errorf("creating directory %s: %w", rel, err)
-		}
-		return nil
+	if _, err := os.Stat(layout.ConfigPath(opts.ProjectRoot)); err == nil {
+		return fmt.Errorf("%s already exists — project appears to already be initialized", layout.ConfigPath(opts.ProjectRoot))
 	}
 
-	writeFile := func(rel, content string) error {
-		path := filepath.Join(opts.ProjectRoot, rel)
-		if _, err := os.Stat(path); err == nil {
-			skipped = append(skipped, rel)
-			return nil
+	agents := normalizeAgents(opts.Agents)
+
+	for _, dir := range []string{
+		layout.DougDir(opts.ProjectRoot),
+		layout.PlanDir(opts.ProjectRoot),
+		layout.LogsDir(opts.ProjectRoot),
+		layout.EpicsDir(opts.ProjectRoot),
+	} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return fmt.Errorf("creating directory %s: %w", dir, err)
 		}
-		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-			return fmt.Errorf("creating parent directory for %s: %w", rel, err)
-		}
-		tmp := path + ".tmp"
-		if err := os.WriteFile(tmp, []byte(content), 0644); err != nil {
-			os.Remove(tmp)
-			return fmt.Errorf("writing %s: %w", rel, err)
-		}
-		if err := os.Rename(tmp, path); err != nil {
-			os.Remove(tmp)
-			return fmt.Errorf("finalizing %s: %w", rel, err)
-		}
-		created = append(created, rel)
-		return nil
 	}
 
-	// .doug/plans/ directory + ACTIVE_STEP.md stub
-	if err := mkdir(".doug/plans"); err != nil {
+	if err := writeManagedFile(layout.ActiveStepPath(opts.ProjectRoot), []byte(activeStepStub), opts.ProjectRoot, &created, &skipped); err != nil {
 		return err
 	}
-	if err := writeFile(".doug/plans/ACTIVE_STEP.md", activeStepStub); err != nil {
+	if err := writeManagedFile(layout.ConfigPath(opts.ProjectRoot), []byte(buildConfig(agents)), opts.ProjectRoot, &created, &skipped); err != nil {
 		return err
 	}
-
-	// doug-plan.yaml config
-	if err := writeFile("doug-plan.yaml", buildConfig(opts.Agents)); err != nil {
+	if err := copyInitTemplates(opts.ProjectRoot, agents, &created, &skipped); err != nil {
 		return err
-	}
-
-	// AGENTS.md
-	if err := writeFile("AGENTS.md", agentsMDTemplate); err != nil {
-		return err
-	}
-
-	// Agent-specific skill directories
-	for _, agent := range opts.Agents {
-		switch agent {
-		case "claude":
-			if err := mkdir(".claude/skills"); err != nil {
-				return err
-			}
-			if err := writeFile(".claude/skills/.gitkeep", ""); err != nil {
-				return err
-			}
-		case "codex":
-			if err := mkdir(".codex/skills"); err != nil {
-				return err
-			}
-			if err := writeFile(".codex/skills/.gitkeep", ""); err != nil {
-				return err
-			}
-		case "gemini":
-			if err := mkdir(".gemini/skills"); err != nil {
-				return err
-			}
-			if err := writeFile(".gemini/skills/.gitkeep", ""); err != nil {
-				return err
-			}
-		}
 	}
 
 	fmt.Fprintf(opts.Out, "doug-plan init complete\n\n")
@@ -130,6 +86,31 @@ func ParseAgents(raw string) []string {
 	return out
 }
 
+func normalizeAgents(agents []string) []string {
+	if len(agents) == 0 {
+		return []string{"claude"}
+	}
+
+	out := make([]string, 0, len(agents))
+	seen := make(map[string]struct{}, len(agents))
+	for _, agent := range agents {
+		agent = strings.ToLower(strings.TrimSpace(agent))
+		if agent == "" {
+			continue
+		}
+		if _, ok := seen[agent]; ok {
+			continue
+		}
+		seen[agent] = struct{}{}
+		out = append(out, agent)
+	}
+
+	if len(out) == 0 {
+		return []string{"claude"}
+	}
+	return out
+}
+
 func buildConfig(agents []string) string {
 	var skillPaths strings.Builder
 	for _, agent := range agents {
@@ -142,17 +123,121 @@ func buildConfig(agents []string) string {
 			skillPaths.WriteString("  - .gemini/skills\n")
 		}
 	}
-	agentStr := strings.Join(agents, ", ")
-	return fmt.Sprintf("agent: %s\napproval_mode: full\nskill_paths:\n%s", agentStr, skillPaths.String())
+
+	primaryAgent := "claude"
+	if len(agents) > 0 && agents[0] != "" {
+		primaryAgent = agents[0]
+	}
+
+	return fmt.Sprintf("agent: %s\napproval_mode: auto\nskill_paths:\n%s", primaryAgent, skillPaths.String())
+}
+
+func copyInitTemplates(projectRoot string, agents []string, created, skipped *[]string) error {
+	agentSelected := make(map[string]bool, len(agents))
+	for _, agent := range agents {
+		agentSelected[agent] = true
+	}
+
+	return fs.WalkDir(templates.Init, "init", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+
+		rel := strings.TrimPrefix(path, "init/")
+		data, err := templates.Init.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("reading template %s: %w", rel, err)
+		}
+
+		if strings.HasPrefix(rel, "skills/") {
+			skillRel := strings.TrimPrefix(rel, "skills/")
+			for _, dst := range selectedSkillDestinations(projectRoot, agentSelected, skillRel) {
+				if err := writeManagedFile(dst, data, projectRoot, created, skipped); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+
+		var dst string
+		switch {
+		case rel == "AGENTS.md":
+			dst = filepath.Join(projectRoot, "AGENTS.md")
+		case rel == "CLAUDE.md":
+			dst = filepath.Join(projectRoot, "CLAUDE.md")
+		case strings.HasPrefix(rel, ".claude/"):
+			if !agentSelected["claude"] {
+				return nil
+			}
+			dst = filepath.Join(projectRoot, rel)
+		case strings.HasPrefix(rel, ".codex/"):
+			if !agentSelected["codex"] {
+				return nil
+			}
+			dst = filepath.Join(projectRoot, rel)
+		case strings.HasPrefix(rel, ".gemini/"):
+			if !agentSelected["gemini"] {
+				return nil
+			}
+			dst = filepath.Join(projectRoot, rel)
+		default:
+			return nil
+		}
+
+		return writeManagedFile(dst, data, projectRoot, created, skipped)
+	})
+}
+
+func selectedSkillDestinations(projectRoot string, agentSelected map[string]bool, skillRel string) []string {
+	var destinations []string
+	if agentSelected["claude"] {
+		destinations = append(destinations, filepath.Join(projectRoot, ".claude", "skills", skillRel))
+	}
+	if agentSelected["codex"] {
+		destinations = append(destinations, filepath.Join(projectRoot, ".codex", "skills", skillRel))
+	}
+	if agentSelected["gemini"] {
+		destinations = append(destinations, filepath.Join(projectRoot, ".gemini", "skills", skillRel))
+	}
+	return destinations
+}
+
+func writeManagedFile(path string, data []byte, projectRoot string, created, skipped *[]string) error {
+	if _, err := os.Stat(path); err == nil {
+		rel, relErr := filepath.Rel(projectRoot, path)
+		if relErr != nil {
+			rel = path
+		}
+		*skipped = append(*skipped, rel)
+		return nil
+	}
+
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return fmt.Errorf("creating parent directory for %s: %w", path, err)
+	}
+
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+		_ = os.Remove(tmp)
+		return fmt.Errorf("writing %s: %w", path, err)
+	}
+	if err := os.Rename(tmp, path); err != nil {
+		_ = os.Remove(tmp)
+		return fmt.Errorf("finalizing %s: %w", path, err)
+	}
+
+	rel, relErr := filepath.Rel(projectRoot, path)
+	if relErr != nil {
+		rel = path
+	}
+	*created = append(*created, rel)
+	return nil
 }
 
 const activeStepStub = `# Active Step
 
 No step is currently active.
-`
-
-const agentsMDTemplate = `# AGENTS.md
-
-This file contains instructions for AI agents working in this repository.
-Add project-specific rules, context, and conventions here.
 `

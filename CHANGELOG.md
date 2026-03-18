@@ -8,21 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- feat: EPIC-2-005 — implement re-entry logic (resume, re-run, start fresh)
+
+### Changed
+
+### Fixed
+
+### Removed
+
+## [0.1.0]
+
+### Added
+- feat: scaffold embedded init templates for AGENTS.md, CLAUDE.md, provider configs, and default provider skill files
+- feat: implement re-entry logic (resume, re-run, start fresh)
 - feat: implement terminal approval gate (auto/soft/hard modes)
-- feat: EPIC-2-003 — agent invocation, result parsing, outcome dispatch
-- feat: EPIC-2-002 — implement ACTIVE_STEP.md write/read/archive lifecycle
-- feat: EPIC-2-001 — artifact-presence state detection
+- feat: agent invocation, result parsing, outcome dispatch
+- feat: implement ACTIVE_STEP.md write/read/archive lifecycle
+- feat: artifact-presence state detection
 - feat: add GitHub Actions release workflow for cross-platform binaries (macOS arm64, macOS amd64, Linux amd64)
-- feat: EPIC-1-004 — update `doug-plan run` stub message to be clear and actionable
+- feat: update `doug-plan run` stub message to be clear and actionable
 - feat: scaffold AGENTS.md and per-agent skill directories for claude, codex, and gemini
 - Scaffold `.doug/plans/` directory, `ACTIVE_STEP.md` stub, and `doug-plan.yaml` config file with approval_mode, agent, and skill_paths fields.
 - feat: implement `doug-plan init --agents` command with project scaffolding
 
 ### Changed
+- refactor: move doug-plan-owned config and runtime files under `.doug/plan/` and add shared path helpers
 - docs(kb): document EPIC-2 orchestrator loop, update project structure, add architecture section
 - docs(kb): create README.md index and update infrastructure/go.md project structure
 
 ### Fixed
-
-### Removed
+- fix: generate `approval_mode: auto` in init config so fresh scaffolds run without manual config repair

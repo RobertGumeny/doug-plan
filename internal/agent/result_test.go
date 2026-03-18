@@ -110,7 +110,7 @@ outcome: "SUCCESS"
 
 func TestParseResult(t *testing.T) {
 	root := t.TempDir()
-	dougDir := filepath.Join(root, ".doug")
+	dougDir := filepath.Join(root, ".doug", "plan")
 	if err := os.MkdirAll(dougDir, 0o755); err != nil {
 		t.Fatalf("setup: %v", err)
 	}

@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "action": "allow",
+      "commandPrefixes": [
+        "rg",
+        "fd",
+        "find",
+        "grep",
+        "git status",
+        "git diff",
+        "git log",
+        "git show",
+        "go test",
+        "go build",
+        "go vet",
+        "make test",
+        "make lint"
+      ]
+    },
+    {
+      "action": "deny",
+      "commandPrefixes": [
+        "git add",
+        "git commit",
+        "git push",
+        "git reset",
+        "git rebase",
+        "git checkout -b",
+        "git switch -c",
+        "rm",
+        "sudo"
+      ]
+    },
+    {
+      "action": "ask_user",
+      "commandPrefixes": [
+        "*"
+      ]
+    }
+  ]
+}

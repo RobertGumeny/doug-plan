@@ -36,12 +36,14 @@ doug-plan/
 │   ├── init.go         # init subcommand — project scaffolding
 │   └── run.go          # run subcommand — --approval, --rerun, --fresh flags
 ├── internal/
-│   ├── scaffold/       # scaffold.Run() — creates .doug/, doug-plan.yaml, AGENTS.md, agent skill dirs
-│   ├── config/         # Config struct, Load, AgentCommand — reads doug-plan.yaml
+│   ├── layout/         # Shared path helpers for .doug/plan-owned files
+│   ├── scaffold/       # scaffold.Run() — creates .doug/plan/, AGENTS.md, CLAUDE.md, and agent skill dirs
+│   ├── config/         # Config struct, Load, AgentCommand — reads .doug/plan/doug-plan.yaml
 │   ├── orchestrator/   # Run(Options) — full pipeline loop (EPIC-2)
 │   ├── agent/          # WriteStep, Invoke, ParseResult, ArchiveStep, Outcome type
 │   ├── approval/       # Gate (auto/soft/hard), Parse, ErrSkipped
-│   └── state/          # Stage type, InferStage, ClearArtifacts*, StageFromString
+│   ├── state/          # Stage type, InferStage, ClearArtifacts*, StageFromString
+│   └── templates/      # Embedded init templates for AGENTS/CLAUDE/provider scaffolding
 ├── main.go             # One line: cmd.Execute()
 ```
 

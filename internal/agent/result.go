@@ -3,9 +3,9 @@ package agent
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
+	"github.com/robertgumeny/doug-plan/internal/layout"
 	"gopkg.in/yaml.v3"
 )
 
@@ -23,10 +23,10 @@ type stepResult struct {
 	Outcome string `yaml:"outcome"`
 }
 
-// ParseResult reads ACTIVE_STEP.md from <projectRoot>/.doug/ and extracts
+// ParseResult reads ACTIVE_STEP.md from <projectRoot>/.doug/plan/ and extracts
 // the outcome value from the ## Agent Result frontmatter block.
 func ParseResult(projectRoot string) (Outcome, error) {
-	path := filepath.Join(projectRoot, ".doug", activeStepFile)
+	path := layout.ActiveStepPath(projectRoot)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", fmt.Errorf("reading %s: %w", activeStepFile, err)

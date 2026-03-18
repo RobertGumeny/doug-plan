@@ -23,10 +23,14 @@ func TestRun_CreatesExpectedFiles(t *testing.T) {
 	}
 
 	expected := []string{
-		".doug/plans/ACTIVE_STEP.md",
-		"doug-plan.yaml",
+		".doug/plan/ACTIVE_STEP.md",
+		".doug/plan/doug-plan.yaml",
+		".doug/plan/epics",
+		".doug/plan/logs",
 		"AGENTS.md",
-		".claude/skills/.gitkeep",
+		"CLAUDE.md",
+		".claude/settings.json",
+		".claude/skills/implement-feature/SKILL.md",
 	}
 	for _, rel := range expected {
 		path := filepath.Join(dir, rel)
@@ -54,10 +58,10 @@ func TestRun_CodexAgent(t *testing.T) {
 		t.Fatalf("Run returned error: %v", err)
 	}
 
-	if _, err := os.Stat(filepath.Join(dir, ".codex/skills/.gitkeep")); os.IsNotExist(err) {
-		t.Error("expected .codex/skills/.gitkeep to be created")
+	if _, err := os.Stat(filepath.Join(dir, ".codex", "skills", "implement-feature", "SKILL.md")); os.IsNotExist(err) {
+		t.Error("expected .codex skill template to be created")
 	}
-	if _, err := os.Stat(filepath.Join(dir, ".claude/skills")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(dir, ".claude", "skills")); !os.IsNotExist(err) {
 		t.Error("expected .claude/skills NOT to be created for codex-only init")
 	}
 }
@@ -75,10 +79,10 @@ func TestRun_GeminiAgent(t *testing.T) {
 		t.Fatalf("Run returned error: %v", err)
 	}
 
-	if _, err := os.Stat(filepath.Join(dir, ".gemini/skills/.gitkeep")); os.IsNotExist(err) {
-		t.Error("expected .gemini/skills/.gitkeep to be created")
+	if _, err := os.Stat(filepath.Join(dir, ".gemini", "skills", "implement-feature", "SKILL.md")); os.IsNotExist(err) {
+		t.Error("expected .gemini skill template to be created")
 	}
-	if _, err := os.Stat(filepath.Join(dir, ".claude/skills")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(dir, ".claude", "skills")); !os.IsNotExist(err) {
 		t.Error("expected .claude/skills NOT to be created for gemini-only init")
 	}
 }
@@ -97,33 +101,35 @@ func TestRun_MultipleAgents(t *testing.T) {
 	}
 
 	for _, rel := range []string{
-		".claude/skills/.gitkeep",
-		".codex/skills/.gitkeep",
-		".gemini/skills/.gitkeep",
+		".claude/skills/implement-feature/SKILL.md",
+		".codex/skills/implement-feature/SKILL.md",
+		".gemini/skills/implement-feature/SKILL.md",
 	} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); os.IsNotExist(err) {
 			t.Errorf("expected file not created: %s", rel)
 		}
 	}
 
-	config, err := os.ReadFile(filepath.Join(dir, "doug-plan.yaml"))
+	config, err := os.ReadFile(filepath.Join(dir, ".doug", "plan", "doug-plan.yaml"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, path := range []string{".claude/skills", ".codex/skills", ".gemini/skills"} {
 		if !strings.Contains(string(config), path) {
-			t.Errorf("expected doug-plan.yaml to contain skill path %q", path)
+			t.Errorf("expected .doug/plan/doug-plan.yaml to contain skill path %q", path)
 		}
+	}
+	if !strings.Contains(string(config), "agent: claude") {
+		t.Errorf("expected primary agent to be claude, got:\n%s", config)
 	}
 }
 
 func TestRun_SkipsExistingFiles(t *testing.T) {
 	dir := t.TempDir()
 
-	// Pre-create AGENTS.md with custom content
 	agentsPath := filepath.Join(dir, "AGENTS.md")
 	customContent := "# My Custom AGENTS\n"
-	if err := os.WriteFile(agentsPath, []byte(customContent), 0644); err != nil {
+	if err := os.WriteFile(agentsPath, []byte(customContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -147,7 +153,7 @@ func TestRun_SkipsExistingFiles(t *testing.T) {
 	}
 }
 
-func TestRun_NoAgents(t *testing.T) {
+func TestRun_NoAgentsDefaultsToClaude(t *testing.T) {
 	dir := t.TempDir()
 	var out strings.Builder
 
@@ -160,11 +166,55 @@ func TestRun_NoAgents(t *testing.T) {
 		t.Fatalf("Run returned error: %v", err)
 	}
 
-	// Core files should still be created
-	for _, rel := range []string{".doug/plans/ACTIVE_STEP.md", "doug-plan.yaml", "AGENTS.md"} {
+	for _, rel := range []string{
+		".doug/plan/ACTIVE_STEP.md",
+		".doug/plan/doug-plan.yaml",
+		"AGENTS.md",
+		"CLAUDE.md",
+		".claude/skills/implement-feature/SKILL.md",
+	} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); os.IsNotExist(err) {
 			t.Errorf("expected file not created: %s", rel)
 		}
+	}
+}
+
+func TestRun_FailsWhenAlreadyInitialized(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, ".doug", "plan"), 0o755); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ".doug", "plan", "doug-plan.yaml"), []byte("agent: claude\napproval_mode: auto\n"), 0o644); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+
+	err := scaffold.Run(scaffold.Options{
+		ProjectRoot: dir,
+		Agents:      []string{"claude"},
+		Out:         new(strings.Builder),
+	})
+	if err == nil {
+		t.Fatal("expected init to fail when .doug/plan/doug-plan.yaml already exists")
+	}
+}
+
+func TestRun_AllowsExistingDougDirWithoutPlanConfig(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, ".doug"), 0o755); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+
+	err := scaffold.Run(scaffold.Options{
+		ProjectRoot: dir,
+		Agents:      []string{"claude"},
+		Out:         new(strings.Builder),
+	})
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(dir, ".doug", "plan", "doug-plan.yaml")); os.IsNotExist(err) {
+		t.Fatal("expected .doug/plan/doug-plan.yaml to be created")
 	}
 }
 

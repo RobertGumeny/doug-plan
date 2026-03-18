@@ -15,7 +15,7 @@ The core orchestrator loop drives the four-stage planning pipeline. Pipeline pos
 
 ## Pipeline Stages
 
-Stages are ordered. Each stage produces one artifact in `.doug/plans/`. A stage is considered done when its artifact is present.
+Stages are ordered. Each stage produces one artifact in `.doug/plan/`. A stage is considered done when its artifact is present.
 
 | Stage | Artifact |
 | ----- | -------- |
@@ -31,11 +31,11 @@ Stages are ordered. Each stage produces one artifact in `.doug/plans/`. A stage 
 Each call to `orchestrator.Run` executes one pipeline step:
 
 1. **Re-entry**: Apply `--fresh` or `--rerun` to clear artifacts (see Re-entry Modes below).
-2. **Infer stage**: `state.InferStage` reads `.doug/plans/` and returns the current stage.
-3. **Write step brief**: `agent.WriteStep` creates `.doug/ACTIVE_STEP.md` with the stage name and a standard briefing template.
+2. **Infer stage**: `state.InferStage` reads `.doug/plan/` and returns the current stage.
+3. **Write step brief**: `agent.WriteStep` creates `.doug/plan/ACTIVE_STEP.md` with the stage name and a standard briefing template.
 4. **Invoke agent**: `agent.Invoke` runs the configured agent command as a subprocess, inheriting stdin/stdout/stderr.
 5. **Parse result**: `agent.ParseResult` reads the `## Agent Result` YAML frontmatter from `ACTIVE_STEP.md` and extracts the `outcome` field.
-6. **Archive step**: `agent.ArchiveStep` moves `ACTIVE_STEP.md` to `.doug/plans/logs/<stage>_<nanosecond>.md`.
+6. **Archive step**: `agent.ArchiveStep` moves `ACTIVE_STEP.md` to `.doug/plan/logs/<stage>_<nanosecond>.md`.
 7. **Dispatch outcome**:
    - `SUCCESS` → run approval gate; advance on confirmation.
    - `FAILURE` → return a non-nil error; pipeline stops.
@@ -47,7 +47,7 @@ Each call to `orchestrator.Run` executes one pipeline step:
 orchestrator.Run called
        │
        ▼
-agent.WriteStep → creates .doug/ACTIVE_STEP.md
+agent.WriteStep → creates .doug/plan/ACTIVE_STEP.md
        │
        ▼
 agent.Invoke → agent reads and fills in ACTIVE_STEP.md
@@ -56,7 +56,7 @@ agent.Invoke → agent reads and fills in ACTIVE_STEP.md
 agent.ParseResult → reads outcome from ACTIVE_STEP.md
        │
        ▼
-agent.ArchiveStep → moves to .doug/plans/logs/
+agent.ArchiveStep → moves to .doug/plan/logs/
 ```
 
 The agent must write the outcome field before exiting:
@@ -101,7 +101,7 @@ CLI --approval flag  →  cfg.ApprovalMode  →  "auto"
 
 ## Configuration (`internal/config`)
 
-`doug-plan.yaml` keys consumed by the orchestrator:
+`.doug/plan/doug-plan.yaml` keys consumed by the orchestrator:
 
 | Key | Type | Purpose |
 | --- | ---- | ------- |

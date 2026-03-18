@@ -98,11 +98,11 @@ func TestStageFromString(t *testing.T) {
 
 func TestClearArtifactsFromStage(t *testing.T) {
 	tests := []struct {
-		name         string
-		present      []string // artifacts present before clear
-		clearFrom    Stage
-		wantPresent  []string // artifacts expected present after clear
-		wantAbsent   []string // artifacts expected absent after clear
+		name        string
+		present     []string // artifacts present before clear
+		clearFrom   Stage
+		wantPresent []string // artifacts expected present after clear
+		wantAbsent  []string // artifacts expected absent after clear
 	}{
 		{
 			name:        "clear from Discovery removes all",

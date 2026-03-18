@@ -6,17 +6,18 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/robertgumeny/doug-plan/internal/layout"
 	"github.com/robertgumeny/doug-plan/internal/state"
 )
 
-const activeStepFile = "ACTIVE_STEP.md"
+const activeStepFile = layout.ActiveStepFile
 
-// WriteStep writes a fresh ACTIVE_STEP.md briefing to <projectRoot>/.doug/
+// WriteStep writes a fresh ACTIVE_STEP.md briefing to <projectRoot>/.doug/plan/
 // before the agent is invoked for the given stage.
 func WriteStep(projectRoot string, stage state.Stage) error {
-	dougDir := filepath.Join(projectRoot, ".doug")
-	if err := os.MkdirAll(dougDir, 0o755); err != nil {
-		return fmt.Errorf("creating .doug dir: %w", err)
+	planDir := layout.PlanDir(projectRoot)
+	if err := os.MkdirAll(planDir, 0o755); err != nil {
+		return fmt.Errorf("creating plan dir: %w", err)
 	}
 
 	content := fmt.Sprintf(`# Active Step
@@ -38,23 +39,23 @@ outcome: ""
 ## Output
 `, stage, stage)
 
-	dest := filepath.Join(dougDir, activeStepFile)
+	dest := layout.ActiveStepPath(projectRoot)
 	if err := os.WriteFile(dest, []byte(content), 0o644); err != nil {
 		return fmt.Errorf("writing %s: %w", activeStepFile, err)
 	}
 	return nil
 }
 
-// ArchiveStep moves <projectRoot>/.doug/ACTIVE_STEP.md into
-// <projectRoot>/.doug/plans/logs/ with a unique name so archived files do not
+// ArchiveStep moves <projectRoot>/.doug/plan/ACTIVE_STEP.md into
+// <projectRoot>/.doug/plan/logs/ with a unique name so archived files do not
 // overwrite each other.
 func ArchiveStep(projectRoot string, stage state.Stage) error {
-	src := filepath.Join(projectRoot, ".doug", activeStepFile)
+	src := layout.ActiveStepPath(projectRoot)
 	if _, err := os.Stat(src); os.IsNotExist(err) {
 		return nil // nothing to archive
 	}
 
-	logsDir := filepath.Join(projectRoot, ".doug", "plans", "logs")
+	logsDir := layout.LogsDir(projectRoot)
 	if err := os.MkdirAll(logsDir, 0o755); err != nil {
 		return fmt.Errorf("creating logs dir: %w", err)
 	}

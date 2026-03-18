@@ -16,7 +16,7 @@ func TestWriteStep(t *testing.T) {
 		t.Fatalf("WriteStep: %v", err)
 	}
 
-	dest := filepath.Join(root, ".doug", activeStepFile)
+	dest := filepath.Join(root, ".doug", "plan", activeStepFile)
 	data, err := os.ReadFile(dest)
 	if err != nil {
 		t.Fatalf("reading ACTIVE_STEP.md: %v", err)
@@ -41,7 +41,7 @@ func TestWriteStep_OverwritesExisting(t *testing.T) {
 		t.Fatalf("second WriteStep: %v", err)
 	}
 
-	data, err := os.ReadFile(filepath.Join(root, ".doug", activeStepFile))
+	data, err := os.ReadFile(filepath.Join(root, ".doug", "plan", activeStepFile))
 	if err != nil {
 		t.Fatalf("reading file: %v", err)
 	}
@@ -62,13 +62,13 @@ func TestArchiveStep(t *testing.T) {
 	}
 
 	// ACTIVE_STEP.md should be gone
-	_, err := os.Stat(filepath.Join(root, ".doug", activeStepFile))
+	_, err := os.Stat(filepath.Join(root, ".doug", "plan", activeStepFile))
 	if !os.IsNotExist(err) {
 		t.Errorf("expected ACTIVE_STEP.md to be removed after archive, got stat err: %v", err)
 	}
 
-	// archive file should exist under .doug/plans/logs/
-	logsDir := filepath.Join(root, ".doug", "plans", "logs")
+	// archive file should exist under .doug/plan/logs/
+	logsDir := filepath.Join(root, ".doug", "plan", "logs")
 	entries, err := os.ReadDir(logsDir)
 	if err != nil {
 		t.Fatalf("reading logs dir: %v", err)
@@ -94,7 +94,7 @@ func TestArchiveStep_NoOverwrite(t *testing.T) {
 		}
 	}
 
-	logsDir := filepath.Join(root, ".doug", "plans", "logs")
+	logsDir := filepath.Join(root, ".doug", "plan", "logs")
 	entries, err := os.ReadDir(logsDir)
 	if err != nil {
 		t.Fatalf("reading logs dir: %v", err)

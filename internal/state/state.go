@@ -36,7 +36,7 @@ func (s Stage) String() string {
 	}
 }
 
-// pipelineStep pairs a stage with the artifact it produces in .doug/plans/.
+// pipelineStep pairs a stage with the artifact it produces in .doug/plan/.
 type pipelineStep struct {
 	stage    Stage
 	artifact string

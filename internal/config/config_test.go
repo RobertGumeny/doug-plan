@@ -8,8 +8,11 @@ import (
 
 func TestLoad(t *testing.T) {
 	root := t.TempDir()
-	yaml := "agent: claude\napproval_mode: full\nskill_paths:\n  - .claude/skills\n"
-	if err := os.WriteFile(filepath.Join(root, "doug-plan.yaml"), []byte(yaml), 0644); err != nil {
+	yaml := "agent: claude\napproval_mode: auto\nskill_paths:\n  - .claude/skills\n"
+	if err := os.MkdirAll(filepath.Join(root, ".doug", "plan"), 0o755); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ".doug", "plan", "doug-plan.yaml"), []byte(yaml), 0o644); err != nil {
 		t.Fatalf("setup: %v", err)
 	}
 
@@ -20,8 +23,8 @@ func TestLoad(t *testing.T) {
 	if cfg.Agent != "claude" {
 		t.Errorf("Agent = %q, want %q", cfg.Agent, "claude")
 	}
-	if cfg.ApprovalMode != "full" {
-		t.Errorf("ApprovalMode = %q, want %q", cfg.ApprovalMode, "full")
+	if cfg.ApprovalMode != "auto" {
+		t.Errorf("ApprovalMode = %q, want %q", cfg.ApprovalMode, "auto")
 	}
 }
 
@@ -41,6 +44,9 @@ func TestAgentCommand_DefaultClaude(t *testing.T) {
 	}
 	if len(args) == 0 || args[0] != "claude" {
 		t.Errorf("args[0] = %q, want %q", args[0], "claude")
+	}
+	if got := args[len(args)-1]; got != "Please complete the step described in .doug/plan/ACTIVE_STEP.md" {
+		t.Errorf("prompt = %q, want new .doug/plan path", got)
 	}
 }
 

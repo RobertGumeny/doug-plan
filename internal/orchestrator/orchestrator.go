@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path/filepath"
 
 	"github.com/robertgumeny/doug-plan/internal/agent"
 	"github.com/robertgumeny/doug-plan/internal/approval"
 	"github.com/robertgumeny/doug-plan/internal/config"
+	"github.com/robertgumeny/doug-plan/internal/layout"
 	"github.com/robertgumeny/doug-plan/internal/state"
 )
 
@@ -26,7 +26,7 @@ type Options struct {
 // writes an ACTIVE_STEP.md briefing, invokes the configured agent,
 // parses the result, dispatches by outcome, and archives the step file.
 func Run(opts Options) error {
-	plansDir := filepath.Join(opts.ProjectRoot, ".doug", "plans")
+	plansDir := layout.PlanDir(opts.ProjectRoot)
 
 	if err := applyReentry(opts, plansDir); err != nil {
 		return err
