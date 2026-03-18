@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // Stage represents a pipeline step, ordered from first to last.
@@ -49,6 +50,44 @@ var pipeline = []pipelineStep{
 	{StageRoadmapping, "ROADMAP.md"},
 	{StagePRD, "PRD.md"},
 	{StageTasks, "TASKS.md"},
+}
+
+// StageFromString parses a stage name (case-insensitive) and returns the
+// corresponding Stage value, or an error if the name is not recognized.
+func StageFromString(name string) (Stage, error) {
+	switch strings.ToLower(name) {
+	case "discovery":
+		return StageDiscovery, nil
+	case "roadmapping":
+		return StageRoadmapping, nil
+	case "prd":
+		return StagePRD, nil
+	case "tasks":
+		return StageTasks, nil
+	default:
+		return StageDiscovery, fmt.Errorf("unknown stage %q: must be one of Discovery, Roadmapping, PRD, Tasks", name)
+	}
+}
+
+// ClearArtifactsFromStage removes the artifact for the given stage and all
+// subsequent stages from plansDir. Missing artifacts are silently skipped.
+func ClearArtifactsFromStage(plansDir string, stage Stage) error {
+	for _, step := range pipeline {
+		if step.stage < stage {
+			continue
+		}
+		path := filepath.Join(plansDir, step.artifact)
+		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("removing artifact %s: %w", step.artifact, err)
+		}
+	}
+	return nil
+}
+
+// ClearAllArtifacts removes all pipeline artifacts from plansDir.
+// Missing artifacts are silently skipped.
+func ClearAllArtifacts(plansDir string) error {
+	return ClearArtifactsFromStage(plansDir, StageDiscovery)
 }
 
 // InferStage inspects plansDir and returns the first stage whose artifact is

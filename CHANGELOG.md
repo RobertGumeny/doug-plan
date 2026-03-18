@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- feat: EPIC-2-005 — implement re-entry logic (resume, re-run, start fresh)
 - feat: implement terminal approval gate (auto/soft/hard modes)
 - feat: EPIC-2-003 — agent invocation, result parsing, outcome dispatch
 - feat: EPIC-2-002 — implement ACTIVE_STEP.md write/read/archive lifecycle

@@ -18,6 +18,8 @@ type Options struct {
 	Out          io.Writer
 	In           io.Reader
 	ApprovalMode string // overrides config when non-empty; must be "auto", "soft", or "hard"
+	RerunStage   string // non-empty triggers re-run mode: clears this stage's artifact and all subsequent
+	Fresh        bool   // true triggers start-fresh mode: clears all plan artifacts
 }
 
 // Run infers the current pipeline position from artifacts on disk,
@@ -25,6 +27,10 @@ type Options struct {
 // parses the result, dispatches by outcome, and archives the step file.
 func Run(opts Options) error {
 	plansDir := filepath.Join(opts.ProjectRoot, ".doug", "plans")
+
+	if err := applyReentry(opts, plansDir); err != nil {
+		return err
+	}
 
 	stage, err := state.InferStage(plansDir)
 	if err != nil {
@@ -81,6 +87,35 @@ func Run(opts Options) error {
 		fmt.Fprintf(opts.Out, "Step %s requesting retry.\n", stage)
 	}
 
+	return nil
+}
+
+// applyReentry clears plan artifacts according to the requested re-entry mode
+// before the orchestrator infers the current pipeline position.
+//
+// Modes:
+//   - Fresh (opts.Fresh == true): remove all pipeline artifacts; run begins at Discovery.
+//   - Re-run (opts.RerunStage != ""): remove the named stage's artifact and every
+//     subsequent stage's artifact so the run starts at that stage.
+//   - Resume (neither flag set): no-op; InferStage picks up where artifacts left off.
+func applyReentry(opts Options, plansDir string) error {
+	if opts.Fresh {
+		if err := state.ClearAllArtifacts(plansDir); err != nil {
+			return fmt.Errorf("clearing artifacts for fresh start: %w", err)
+		}
+		fmt.Fprintf(opts.Out, "Re-entry: cleared all plan artifacts. Starting at Discovery.\n")
+		return nil
+	}
+	if opts.RerunStage != "" {
+		stage, err := state.StageFromString(opts.RerunStage)
+		if err != nil {
+			return fmt.Errorf("re-run stage: %w", err)
+		}
+		if err := state.ClearArtifactsFromStage(plansDir, stage); err != nil {
+			return fmt.Errorf("clearing artifacts for re-run of %s: %w", stage, err)
+		}
+		fmt.Fprintf(opts.Out, "Re-entry: cleared artifacts from %s onwards.\n", stage)
+	}
 	return nil
 }
 

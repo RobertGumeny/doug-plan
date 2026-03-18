@@ -8,6 +8,8 @@ import (
 )
 
 var approvalFlag string
+var rerunFlag string
+var freshFlag bool
 
 var runCmd = &cobra.Command{
 	Use:   "run",
@@ -22,11 +24,15 @@ var runCmd = &cobra.Command{
 			Out:          os.Stdout,
 			In:           os.Stdin,
 			ApprovalMode: approvalFlag,
+			RerunStage:   rerunFlag,
+			Fresh:        freshFlag,
 		})
 	},
 }
 
 func init() {
 	runCmd.Flags().StringVar(&approvalFlag, "approval", "", "approval mode override: auto, soft, or hard")
+	runCmd.Flags().StringVar(&rerunFlag, "rerun", "", "re-run from stage: Discovery, Roadmapping, PRD, or Tasks")
+	runCmd.Flags().BoolVar(&freshFlag, "fresh", false, "start fresh: clear all plan artifacts and begin at Discovery")
 	rootCmd.AddCommand(runCmd)
 }
