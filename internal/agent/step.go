@@ -8,19 +8,40 @@ import (
 
 	"github.com/robertgumeny/doug-plan/internal/layout"
 	"github.com/robertgumeny/doug-plan/internal/state"
+	"github.com/robertgumeny/doug-plan/internal/templates"
 )
 
 const activeStepFile = layout.ActiveStepFile
 
 // WriteStep writes a fresh ACTIVE_STEP.md briefing to <projectRoot>/.doug/plan/
 // before the agent is invoked for the given stage.
+//
+// Stage-specific templates in internal/templates/steps/<Stage>.md are used when
+// available; otherwise a generic template is written.
 func WriteStep(projectRoot string, stage state.Stage) error {
 	planDir := layout.PlanDir(projectRoot)
 	if err := os.MkdirAll(planDir, 0o755); err != nil {
 		return fmt.Errorf("creating plan dir: %w", err)
 	}
 
-	content := fmt.Sprintf(`# Active Step
+	content := stepContent(stage)
+
+	dest := layout.ActiveStepPath(projectRoot)
+	if err := os.WriteFile(dest, []byte(content), 0o644); err != nil {
+		return fmt.Errorf("writing %s: %w", activeStepFile, err)
+	}
+	return nil
+}
+
+// stepContent returns the ACTIVE_STEP.md content for the given stage.
+// It loads a stage-specific template from the embedded steps FS when one
+// exists, and falls back to a generic template for stages without one.
+func stepContent(stage state.Stage) string {
+	name := "steps/" + stage.String() + ".md"
+	if data, err := templates.Steps.ReadFile(name); err == nil {
+		return string(data)
+	}
+	return fmt.Sprintf(`# Active Step
 
 **Stage**: %s
 
@@ -38,12 +59,6 @@ outcome: ""
 
 ## Output
 `, stage, stage)
-
-	dest := layout.ActiveStepPath(projectRoot)
-	if err := os.WriteFile(dest, []byte(content), 0o644); err != nil {
-		return fmt.Errorf("writing %s: %w", activeStepFile, err)
-	}
-	return nil
 }
 
 // ArchiveStep moves <projectRoot>/.doug/plan/ACTIVE_STEP.md into

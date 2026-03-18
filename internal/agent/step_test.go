@@ -31,6 +31,57 @@ func TestWriteStep(t *testing.T) {
 	}
 }
 
+func TestWriteStep_Discovery_TemplateContent(t *testing.T) {
+	root := t.TempDir()
+
+	if err := WriteStep(root, state.StageDiscovery); err != nil {
+		t.Fatalf("WriteStep: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(root, ".doug", "plan", activeStepFile))
+	if err != nil {
+		t.Fatalf("reading ACTIVE_STEP.md: %v", err)
+	}
+
+	content := string(data)
+	checks := []string{
+		"VISION.md",      // artifact path
+		"/discovery",     // skill instruction
+		"outcome: \"\"",  // result stub
+	}
+	for _, want := range checks {
+		if !strings.Contains(content, want) {
+			t.Errorf("Discovery ACTIVE_STEP.md missing %q; got:\n%s", want, content)
+		}
+	}
+}
+
+func TestWriteStep_Roadmapping_TemplateContent(t *testing.T) {
+	root := t.TempDir()
+
+	if err := WriteStep(root, state.StageRoadmapping); err != nil {
+		t.Fatalf("WriteStep: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(root, ".doug", "plan", activeStepFile))
+	if err != nil {
+		t.Fatalf("reading ACTIVE_STEP.md: %v", err)
+	}
+
+	content := string(data)
+	checks := []string{
+		"ROADMAP.md",     // artifact path
+		"/roadmapping",   // skill instruction
+		"VISION.md",      // prerequisite
+		"outcome: \"\"",  // result stub
+	}
+	for _, want := range checks {
+		if !strings.Contains(content, want) {
+			t.Errorf("Roadmapping ACTIVE_STEP.md missing %q; got:\n%s", want, content)
+		}
+	}
+}
+
 func TestWriteStep_OverwritesExisting(t *testing.T) {
 	root := t.TempDir()
 
