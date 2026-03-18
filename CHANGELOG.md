@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- fix: remove obsolete skill documentation and update scaffold tests to use research skill
+
 ### Fixed
 
 ### Removed

@@ -7,6 +7,7 @@ This is the entry point for the doug-plan knowledge base. Read the articles rele
 | Article | Summary |
 | ------- | ------- |
 | [Orchestrator Loop](architecture/orchestrator.md) | Pipeline stages, ACTIVE_STEP.md lifecycle, agent invocation, approval gate, re-entry modes, config, CLI flags |
+| [Skill System](architecture/skill-system.md) | Skill file format, scaffold copy behavior, agent directory mapping, adding new skills, research skill as baseline |
 
 ## Infrastructure
 

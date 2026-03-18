@@ -30,7 +30,7 @@ func TestRun_CreatesExpectedFiles(t *testing.T) {
 		"AGENTS.md",
 		"CLAUDE.md",
 		".claude/settings.json",
-		".claude/skills/implement-feature/SKILL.md",
+		".claude/skills/research/SKILL.md",
 	}
 	for _, rel := range expected {
 		path := filepath.Join(dir, rel)
@@ -58,7 +58,7 @@ func TestRun_CodexAgent(t *testing.T) {
 		t.Fatalf("Run returned error: %v", err)
 	}
 
-	if _, err := os.Stat(filepath.Join(dir, ".codex", "skills", "implement-feature", "SKILL.md")); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(dir, ".codex", "skills", "research", "SKILL.md")); os.IsNotExist(err) {
 		t.Error("expected .codex skill template to be created")
 	}
 	if _, err := os.Stat(filepath.Join(dir, ".claude", "skills")); !os.IsNotExist(err) {
@@ -79,7 +79,7 @@ func TestRun_GeminiAgent(t *testing.T) {
 		t.Fatalf("Run returned error: %v", err)
 	}
 
-	if _, err := os.Stat(filepath.Join(dir, ".gemini", "skills", "implement-feature", "SKILL.md")); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(dir, ".gemini", "skills", "research", "SKILL.md")); os.IsNotExist(err) {
 		t.Error("expected .gemini skill template to be created")
 	}
 	if _, err := os.Stat(filepath.Join(dir, ".claude", "skills")); !os.IsNotExist(err) {
@@ -101,9 +101,9 @@ func TestRun_MultipleAgents(t *testing.T) {
 	}
 
 	for _, rel := range []string{
-		".claude/skills/implement-feature/SKILL.md",
-		".codex/skills/implement-feature/SKILL.md",
-		".gemini/skills/implement-feature/SKILL.md",
+		".claude/skills/research/SKILL.md",
+		".codex/skills/research/SKILL.md",
+		".gemini/skills/research/SKILL.md",
 	} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); os.IsNotExist(err) {
 			t.Errorf("expected file not created: %s", rel)
@@ -171,7 +171,7 @@ func TestRun_NoAgentsDefaultsToClaude(t *testing.T) {
 		".doug/plan/doug-plan.yaml",
 		"AGENTS.md",
 		"CLAUDE.md",
-		".claude/skills/implement-feature/SKILL.md",
+		".claude/skills/research/SKILL.md",
 	} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); os.IsNotExist(err) {
 			t.Errorf("expected file not created: %s", rel)
