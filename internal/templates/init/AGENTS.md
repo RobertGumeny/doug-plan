@@ -1,7 +1,7 @@
 <!-- DOUG-PLAN-SPECIFIC-INSTRUCTIONS:START -->
 ## Doug-Plan Instructions
 
-This section is managed by `doug-plan init`. Keep repository-specific planning rules here, and keep skill files focused on their workflow.
+This section is managed by `doug-plan`. Keep repository-specific planning rules here, and keep skill files focused on their workflow.
 
 ### Progressive Disclosure
 
@@ -13,6 +13,6 @@ This section is managed by `doug-plan init`. Keep repository-specific planning r
 
 - Treat `.doug/plan/ACTIVE_STEP.md` as the canonical task brief for doug-plan managed work.
 - Write your result directly into the `## Agent Result` block and output section in `.doug/plan/ACTIVE_STEP.md`.
-- Keep doug-plan-owned planning artifacts inside `.doug/plan/`.
-- If you find a bug outside the active planning step, report it instead of fixing it opportunistically.
+- Keep all created artifacts inside `.doug/plan/`.
+- If you find a bug that prevents you from finishing a planning step, report it instead of fixing it opportunistically.
 <!-- DOUG-PLAN-SPECIFIC-INSTRUCTIONS:END -->
