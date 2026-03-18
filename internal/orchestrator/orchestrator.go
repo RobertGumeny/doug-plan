@@ -1,19 +1,23 @@
 package orchestrator
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
 
 	"github.com/robertgumeny/doug-plan/internal/agent"
+	"github.com/robertgumeny/doug-plan/internal/approval"
 	"github.com/robertgumeny/doug-plan/internal/config"
 	"github.com/robertgumeny/doug-plan/internal/state"
 )
 
 // Options holds the runtime configuration for an orchestrator run.
 type Options struct {
-	ProjectRoot string
-	Out         io.Writer
+	ProjectRoot  string
+	Out          io.Writer
+	In           io.Reader
+	ApprovalMode string // overrides config when non-empty; must be "auto", "soft", or "hard"
 }
 
 // Run infers the current pipeline position from artifacts on disk,
@@ -65,6 +69,12 @@ func Run(opts Options) error {
 	switch outcome {
 	case agent.OutcomeSuccess:
 		fmt.Fprintf(opts.Out, "Step %s completed successfully.\n", stage)
+		if err := runApprovalGate(opts, cfg, stage.String()); err != nil {
+			if errors.Is(err, approval.ErrSkipped) {
+				return nil
+			}
+			return err
+		}
 	case agent.OutcomeFailure:
 		return fmt.Errorf("step %s failed: agent reported FAILURE", stage)
 	case agent.OutcomeRetry:
@@ -72,4 +82,23 @@ func Run(opts Options) error {
 	}
 
 	return nil
+}
+
+// runApprovalGate resolves the approval mode (CLI flag takes precedence over
+// config) and runs the gate for the completed stage.
+func runApprovalGate(opts Options, cfg *config.Config, stage string) error {
+	modeStr := cfg.ApprovalMode
+	if opts.ApprovalMode != "" {
+		modeStr = opts.ApprovalMode
+	}
+	if modeStr == "" {
+		modeStr = string(approval.ModeAuto)
+	}
+
+	mode, err := approval.Parse(modeStr)
+	if err != nil {
+		return fmt.Errorf("resolving approval mode: %w", err)
+	}
+
+	return approval.Gate(mode, stage, opts.Out, opts.In)
 }

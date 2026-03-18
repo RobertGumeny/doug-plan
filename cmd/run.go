@@ -7,6 +7,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var approvalFlag string
+
 var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run the configured plan steps",
@@ -16,12 +18,15 @@ var runCmd = &cobra.Command{
 			return err
 		}
 		return orchestrator.Run(orchestrator.Options{
-			ProjectRoot: cwd,
-			Out:         os.Stdout,
+			ProjectRoot:  cwd,
+			Out:          os.Stdout,
+			In:           os.Stdin,
+			ApprovalMode: approvalFlag,
 		})
 	},
 }
 
 func init() {
+	runCmd.Flags().StringVar(&approvalFlag, "approval", "", "approval mode override: auto, soft, or hard")
 	rootCmd.AddCommand(runCmd)
 }
