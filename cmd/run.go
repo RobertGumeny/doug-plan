@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"fmt"
+	"os"
 
+	"github.com/robertgumeny/doug-plan/internal/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -10,8 +11,14 @@ var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run the configured plan steps",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("No steps configured. Add plan steps to .doug/plans/ to get started.")
-		return nil
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		return orchestrator.Run(orchestrator.Options{
+			ProjectRoot: cwd,
+			Out:         os.Stdout,
+		})
 	},
 }
 
