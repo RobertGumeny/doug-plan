@@ -34,13 +34,14 @@ doug-plan/
 ├── cmd/
 │   ├── root.go         # rootCmd definition and Execute()
 │   ├── init.go         # init subcommand — project scaffolding
-│   └── run.go          # run subcommand — orchestration stub
+│   └── run.go          # run subcommand — --approval, --rerun, --fresh flags
 ├── internal/
 │   ├── scaffold/       # scaffold.Run() — creates .doug/, doug-plan.yaml, AGENTS.md, agent skill dirs
-│   ├── config/         # (stub) OrchestratorConfig, LoadConfig
-│   ├── orchestrator/   # (stub) task orchestration logic
-│   ├── agent/          # (stub) agent session management
-│   └── state/          # (stub) LoadProjectState, SaveProjectState
+│   ├── config/         # Config struct, Load, AgentCommand — reads doug-plan.yaml
+│   ├── orchestrator/   # Run(Options) — full pipeline loop (EPIC-2)
+│   ├── agent/          # WriteStep, Invoke, ParseResult, ArchiveStep, Outcome type
+│   ├── approval/       # Gate (auto/soft/hard), Parse, ErrSkipped
+│   └── state/          # Stage type, InferStage, ClearArtifacts*, StageFromString
 ├── main.go             # One line: cmd.Execute()
 ```
 

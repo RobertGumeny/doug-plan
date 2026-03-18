@@ -2,6 +2,12 @@
 
 This is the entry point for the doug-plan knowledge base. Read the articles relevant to your task — do not scan the entire KB up front.
 
+## Architecture
+
+| Article | Summary |
+| ------- | ------- |
+| [Orchestrator Loop](architecture/orchestrator.md) | Pipeline stages, ACTIVE_STEP.md lifecycle, agent invocation, approval gate, re-entry modes, config, CLI flags |
+
 ## Infrastructure
 
 | Article | Summary |

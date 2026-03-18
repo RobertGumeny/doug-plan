@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat: implement `doug-plan init --agents` command with project scaffolding
 
 ### Changed
+- docs(kb): document EPIC-2 orchestrator loop, update project structure, add architecture section
 - docs(kb): create README.md index and update infrastructure/go.md project structure
 
 ### Fixed
