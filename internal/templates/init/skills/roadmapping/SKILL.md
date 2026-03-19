@@ -1,42 +1,33 @@
 ---
 name: "roadmapping"
-description: "Transform a VISION.md into a sequenced ROADMAP.md in the hybrid Markdown + YAML frontmatter format. Use when VISION.md exists and a roadmap of epics needs to be produced."
+description: "Expert product roadmapping — translate project vision into a minimal, well-sequenced set of epics scoped at the 'what are we building' level."
 ---
 
-# Roadmapping Workflow
+# Roadmapping
 
-This skill reads `VISION.md` and produces a `ROADMAP.md` containing sequenced epics scoped at the "what are we building" level. It can be invoked standalone (`/roadmapping`) or as part of the `doug-plan` pipeline.
+Read the repository instructions and the task brief first, then use this expertise to produce the roadmap.
 
-## Phase 1: Ingest Context
+## Mindset
 
-1. If `.doug/plan/ACTIVE_STEP.md` exists, read it for the planning brief.
-2. Locate `VISION.md`:
-   - Check `.doug/plan/VISION.md` first.
-   - If not found, check the project root for `VISION.md`.
-   - If neither exists, stop and tell the user that `VISION.md` is required before roadmapping can proceed.
-3. Read `VISION.md` in full. Note the project name, goals, non-goals, constraints, and success criteria — these directly inform epic scope and sequencing.
-4. If `.doug/plans/research/` exists, list its contents. Read every `.md` file found there. If the directory does not exist or is empty, proceed without it.
+You are a product architect decomposing a vision into a delivery sequence. Your job is to find the minimal set of coherent increments that achieves the stated goals — in the right order. Every epic must earn its place. Resist the urge to add epics for work that sounds useful but is not required by the vision.
 
-## Phase 2: Synthesize Epics
+## Scoping Epics Well
 
-Using the vision and any research context, identify the minimal set of epics needed to achieve the stated goals. Apply these rules:
+Each epic should answer "what are we building?" at a meaningful level of abstraction — not implementation tasks, not user stories, not technical sub-problems. An epic is a shippable increment that a stakeholder can understand and approve without knowing how it is built.
 
-- **Scope each epic at the "what are we building" level** — not tasks, not user stories, not implementation details.
-- **Sequence by dependency**: foundational infrastructure before features that depend on it; core user-facing value before enhancements.
-- **Respect non-goals and constraints**: do not include epics for explicitly out-of-scope work.
-- **Size for coherence**: each epic should deliver a meaningful, independently shippable increment. Avoid epics that are either trivially small or so large they cannot be reviewed as a unit.
-- Aim for 3–8 epics. Fewer is better when scope allows.
+Good epic scope: independently deliverable, clearly differentiated from adjacent epics, sized so it can be reviewed as a coherent unit.
 
-For each epic, produce:
-- A short, descriptive name (3–6 words)
-- A one-paragraph description of what it builds and why it comes at this point in the sequence
-- An EPIC-N identifier assigned in sequence order (EPIC-1, EPIC-2, …)
+Aim for 3–8 epics. A roadmap with fewer, larger epics is usually better than one with many small ones. If two epics always ship together and cannot be reviewed independently, merge them.
 
-## Phase 3: Draft ROADMAP.md
+## Sequencing Well
 
-Using the synthesized epics, draft a `ROADMAP.md` in the hybrid Markdown + YAML frontmatter format shown below.
+Sequence by dependency, not by preference. Ask: what does each epic require to exist before it can start? Infrastructure and data foundations before features that depend on them. Core user-facing value before enhancements and optimizations. Integrations after the things being integrated exist.
 
-**Top-level frontmatter** captures document metadata. **Each epic section** contains an embedded YAML block (parseable by the orchestrator) followed by a Markdown prose description.
+Explicitly exclude work that the vision marks as out of scope. If an epic would only address a non-goal, remove it.
+
+## Output Format
+
+Produce the roadmap in hybrid Markdown + YAML frontmatter format. The YAML blocks are machine-parsed — field names and structure must be exact.
 
 ```markdown
 ---
@@ -56,46 +47,15 @@ sequence: 1
 status: planned
 ---
 
-One paragraph describing what this epic builds and why it comes first in the sequence.
-
-## EPIC-2: Next Epic Title
-
----
-id: EPIC-2
-name: "Next Epic Title"
-sequence: 2
-status: planned
----
-
-One paragraph describing what this epic builds and why it follows EPIC-1.
+One paragraph describing what this epic builds and why it comes at this point in the sequence.
 ```
 
-Rules for the output document:
-- Every epic must have a complete YAML block with `id`, `name`, `sequence`, and `status` fields.
-- `status` is always `planned` for newly produced roadmaps.
-- The `sequence` values must be consecutive integers starting at 1.
-- Prose descriptions must be concrete — no placeholders, no "TBD", no bracketed text.
-- Do not include epics for work that is explicitly out of scope in `VISION.md`.
+Required YAML fields per epic: `id`, `name`, `sequence`, `status`. `status` is always `planned` for a newly produced roadmap. Prose descriptions must be concrete — no placeholders, no "TBD".
 
-## Phase 4: Review and Confirm
+## Review
 
-1. Present the full draft to the user.
-2. Ask: "Does this roadmap correctly sequence the work? Any epics to add, remove, reorder, or rename before I save it?"
-3. Apply any requested changes.
-4. Repeat until the user confirms the roadmap is complete and correctly sequenced.
+Present the full draft and ask the user to confirm the epics, sequencing, and naming before writing. Do not save until the user has explicitly approved the content.
 
-## Phase 5: Write Output
+## Output
 
-1. Ensure the directory `.doug/plan/` exists; create it if needed.
-2. Write the confirmed document to `.doug/plan/ROADMAP.md`.
-3. If `.doug/plan/ACTIVE_STEP.md` exists (pipeline mode), write the outcome into its `## Agent Result` block:
-
-```markdown
-## Agent Result
-
----
-outcome: "SUCCESS"
----
-```
-
-4. Confirm to the user that `.doug/plan/ROADMAP.md` has been written.
+Write the confirmed roadmap to the location specified in the task brief. Report the result per repository instructions.
