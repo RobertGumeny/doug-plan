@@ -33,6 +33,7 @@ func TestRun_CreatesExpectedFiles(t *testing.T) {
 		".claude/skills/research/SKILL.md",
 		".claude/skills/discovery/SKILL.md",
 		".claude/skills/roadmapping/SKILL.md",
+		".claude/skills/scoping/SKILL.md",
 	}
 	for _, rel := range expected {
 		path := filepath.Join(dir, rel)
@@ -69,6 +70,9 @@ func TestRun_CodexAgent(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(dir, ".codex", "skills", "roadmapping", "SKILL.md")); os.IsNotExist(err) {
 		t.Error("expected .codex roadmapping skill template to be created")
 	}
+	if _, err := os.Stat(filepath.Join(dir, ".codex", "skills", "scoping", "SKILL.md")); os.IsNotExist(err) {
+		t.Error("expected .codex scoping skill template to be created")
+	}
 	if _, err := os.Stat(filepath.Join(dir, ".claude", "skills")); !os.IsNotExist(err) {
 		t.Error("expected .claude/skills NOT to be created for codex-only init")
 	}
@@ -95,6 +99,9 @@ func TestRun_GeminiAgent(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, ".gemini", "skills", "roadmapping", "SKILL.md")); os.IsNotExist(err) {
 		t.Error("expected .gemini roadmapping skill template to be created")
+	}
+	if _, err := os.Stat(filepath.Join(dir, ".gemini", "skills", "scoping", "SKILL.md")); os.IsNotExist(err) {
+		t.Error("expected .gemini scoping skill template to be created")
 	}
 	if _, err := os.Stat(filepath.Join(dir, ".claude", "skills")); !os.IsNotExist(err) {
 		t.Error("expected .claude/skills NOT to be created for gemini-only init")
@@ -124,6 +131,9 @@ func TestRun_MultipleAgents(t *testing.T) {
 		".claude/skills/roadmapping/SKILL.md",
 		".codex/skills/roadmapping/SKILL.md",
 		".gemini/skills/roadmapping/SKILL.md",
+		".claude/skills/scoping/SKILL.md",
+		".codex/skills/scoping/SKILL.md",
+		".gemini/skills/scoping/SKILL.md",
 	} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); os.IsNotExist(err) {
 			t.Errorf("expected file not created: %s", rel)
@@ -194,6 +204,7 @@ func TestRun_NoAgentsDefaultsToClaude(t *testing.T) {
 		".claude/skills/research/SKILL.md",
 		".claude/skills/discovery/SKILL.md",
 		".claude/skills/roadmapping/SKILL.md",
+		".claude/skills/scoping/SKILL.md",
 	} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); os.IsNotExist(err) {
 			t.Errorf("expected file not created: %s", rel)
