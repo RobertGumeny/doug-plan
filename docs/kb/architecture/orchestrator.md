@@ -1,6 +1,6 @@
 ---
 title: Orchestrator Loop
-updated: 2026-03-18
+updated: 2026-03-19
 category: Architecture
 tags: [orchestrator, state, approval, agent, pipeline]
 related_articles:
@@ -22,6 +22,7 @@ Stages are ordered. Each stage produces one artifact in `.doug/plan/`. A stage i
 | ----- | -------- |
 | Discovery | `VISION.md` |
 | Roadmapping | `ROADMAP.md` |
+| Scoping | `SCOPED.md` |
 | PRD | `PRD.md` |
 | Tasks | `TASKS.md` |
 
@@ -33,7 +34,7 @@ Each call to `orchestrator.Run` executes one pipeline step:
 
 1. **Re-entry**: Apply `--fresh` or `--rerun` to clear artifacts (see Re-entry Modes below).
 2. **Infer stage**: `state.InferStage` reads `.doug/plan/` and returns the current stage.
-3. **Write step brief**: `agent.WriteStep` creates `.doug/plan/ACTIVE_STEP.md`. It loads a stage-specific template from `internal/templates/steps/<Stage>.md` when one exists (currently `Discovery.md` and `Roadmapping.md`); otherwise a generic template is written.
+3. **Write step brief**: `agent.WriteStep` creates `.doug/plan/ACTIVE_STEP.md`. It loads a stage-specific template from `internal/templates/steps/<Stage>.md` when one exists (currently `Discovery.md`, `Roadmapping.md`, `Scoping.md`, and `PRD.md`); otherwise a generic template is written.
 4. **Invoke agent**: `agent.Invoke` runs the configured agent command as a subprocess, inheriting stdin/stdout/stderr.
 5. **Parse result**: `agent.ParseResult` reads the `## Agent Result` YAML frontmatter from `ACTIVE_STEP.md` and extracts the `outcome` field.
 6. **Archive step**: `agent.ArchiveStep` moves `ACTIVE_STEP.md` to `.doug/plan/logs/<stage>_<nanosecond>.md`.
@@ -82,7 +83,7 @@ Valid values: `SUCCESS`, `FAILURE`, `RETRY`.
 | Re-run | `--rerun <Stage>` | Removes the named stage's artifact and all subsequent artifacts |
 | Fresh | `--fresh` | Removes all pipeline artifacts; run starts at Discovery |
 
-Stage names for `--rerun`: `Discovery`, `Roadmapping`, `PRD`, `Tasks` (case-insensitive).
+Stage names for `--rerun`: `Discovery`, `Roadmapping`, `Scoping`, `PRD`, `Tasks` (case-insensitive).
 
 ## Approval Gate (`internal/approval`)
 
@@ -129,7 +130,7 @@ doug-plan run [flags]
 
 Flags:
   --approval string   approval mode override: auto, soft, or hard
-  --rerun   string    re-run from stage: Discovery, Roadmapping, PRD, or Tasks
+  --rerun   string    re-run from stage: Discovery, Roadmapping, Scoping, PRD, or Tasks
   --fresh             start fresh: clear all plan artifacts and begin at Discovery
 ```
 

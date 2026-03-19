@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat: add golangci-lint configuration and refactor output formatting
 
 ### Changed
+- docs: update KB for EPIC-4 — add Scoping/PRD stages and scoping/handoff skills
 - docs(kb): update KB articles for EPIC-3 — document discovery and roadmapping skills, stage-specific ACTIVE_STEP.md templates, and ParseResult anchor fix
 - fix: remove obsolete skill documentation and update scaffold tests to use research skill
 
