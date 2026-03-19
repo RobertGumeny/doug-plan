@@ -20,6 +20,11 @@ This skill reads `.doug/plan/epics/<EPIC-ID>/SCOPED.md`, converts the scoped tas
    - If not found, check the project root.
    - If neither exists, stop and tell the user that `ROADMAP.md` is required before handoff can proceed.
 5. Read `ROADMAP.md` in full. Parse each epic block (id, name, sequence, description).
+6. Determine whether the project is **greenfield**. A project is greenfield if ALL of the following hold:
+   - `VISION.md` contains no references to an existing codebase, legacy system, migration, rewrite, or port.
+   - The problem statement and background describe a new creation, not an extension or replacement of prior software.
+   - No constraints in `VISION.md` mention integrating with or preserving a pre-existing implementation.
+   Record this determination (greenfield: true/false) for use in Phase 5.
 
 ## Phase 2: Identify the Next Epic to Hand Off
 
@@ -166,4 +171,29 @@ outcome: "SUCCESS"
 
 Use `"RETRY"` instead of `"SUCCESS"` when more epics remain to be handed off.
 
-6. Confirm to the user which epic was handed off and whether more remain.
+6. **Greenfield manifest**: If the project was determined to be greenfield in Phase 1 AND `.doug/plan/manifest.yaml` does not already exist, emit `.doug/plan/manifest.yaml` using the format below. If `.doug/plan/manifest.yaml` already exists, skip this step.
+
+**`.doug/plan/manifest.yaml` format:**
+
+```yaml
+project: "<Project Name from VISION.md>"
+generated: "YYYY-MM-DD"
+greenfield: true
+stack:
+  - "<primary language or runtime, e.g. Go>"
+  - "<additional language, framework, or platform if applicable>"
+build_system: "<primary build tool, e.g. make, gradle, npm, cargo, go>"
+dependencies:
+  - "<notable runtime dependency>"
+  - "<additional dependency if applicable>"
+```
+
+**Rules for `manifest.yaml`:**
+- `project` must match the project name in `VISION.md` exactly.
+- `stack` must list every language, runtime, and major framework mentioned in `VISION.md` or `ROADMAP.md`. Each entry is a plain string. No empty entries.
+- `build_system` must be a single string identifying the primary build tool. Derive it from technology choices in `VISION.md`; if not specified, use the conventional default for the stack (e.g. `go` for Go-only projects, `npm` for Node.js).
+- `dependencies` lists notable runtime dependencies derived from `VISION.md` or `ROADMAP.md`. If none are specified, use an empty list (`[]`).
+- No placeholders, no "TBD", no bracketed text. Every field must be unambiguous.
+- Do **not** emit `manifest.yaml` if the project is not greenfield.
+
+7. Confirm to the user which epic was handed off, whether more remain, and (if applicable) whether `manifest.yaml` was written.

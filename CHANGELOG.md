@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- feat: add greenfield detection and manifest.yaml emission to Handoff skill
 - feat: implement Handoff skill for converting scoped epics to PRD.md and tasks.yaml
 - feat: EPIC-4-002 — implement re-entry at Scoping for subsequent epics
 - feat: implement Scoping skill and add StageScoping to pipeline
