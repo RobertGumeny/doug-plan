@@ -2,7 +2,7 @@
 title: Skill System
 updated: 2026-03-18
 category: Architecture
-tags: [skills, scaffold, agents, claude, codex, gemini]
+tags: [skills, scaffold, agents, claude, codex, gemini, discovery, roadmapping]
 related_articles:
   - docs/kb/architecture/orchestrator.md
 ---
@@ -42,15 +42,23 @@ Skill templates live in `internal/templates/init/skills/`. During `scaffold.Run`
 
 ```
 internal/templates/init/skills/
-└── research/
+├── discovery/
+│   └── SKILL.md       ← template
+├── research/
+│   └── SKILL.md       ← template
+└── roadmapping/
     └── SKILL.md       ← template
 ```
 
 **Destination layout after `doug init --agents claude,codex`:**
 
 ```
+.claude/skills/discovery/SKILL.md
 .claude/skills/research/SKILL.md
+.claude/skills/roadmapping/SKILL.md
+.codex/skills/discovery/SKILL.md
 .codex/skills/research/SKILL.md
+.codex/skills/roadmapping/SKILL.md
 ```
 
 The mapping is handled by `selectedSkillDestinations` in `internal/scaffold/scaffold.go`. Agent directories:
@@ -93,8 +101,61 @@ When building a new skill, start by copying `research/SKILL.md` and adapting the
 
 ---
 
+## Planning Skills: `discovery` and `roadmapping`
+
+These two skills implement the first two stages of the `doug-plan` pipeline. Both can be invoked standalone or as part of a pipeline run.
+
+### `discovery`
+
+Runs a structured interview with the user and synthesizes the answers into `VISION.md`.
+
+**Phases**: Ingest Existing Context → Guided Interview → Draft VISION.md → Review and Confirm → Write Output
+
+- Phase 1 reads `.doug/plan/ACTIVE_STEP.md` (if present) and any research reports from `.doug/plans/research/`.
+- Phase 2 asks 10 structured questions covering project identity, users, scope, constraints, and success criteria. Follow-up questions are asked until all answers are concrete (no "TBD" or placeholders).
+- Phase 5 writes `.doug/plan/VISION.md` and, if running in pipeline mode, sets `outcome: "SUCCESS"` in `ACTIVE_STEP.md`.
+
+**Output**: `.doug/plan/VISION.md` with sections: Project Name, Problem Statement, Target Users, Goals, Non-Goals, Constraints, Success Criteria, Failure Conditions, Background.
+
+### `roadmapping`
+
+Reads `VISION.md` and produces a `ROADMAP.md` containing sequenced epics in hybrid Markdown + YAML frontmatter format.
+
+**Phases**: Ingest Context → Synthesize Epics → Draft ROADMAP.md → Review and Confirm → Write Output
+
+- Phase 1 reads `.doug/plan/ACTIVE_STEP.md`, locates `VISION.md` (checks `.doug/plan/VISION.md` then project root), and reads any research reports from `.doug/plans/research/`.
+- Phase 2 derives a minimal set of 3–8 epics, scoped at the "what are we building" level, sequenced by dependency.
+- Phase 5 writes `.doug/plan/ROADMAP.md` and, if running in pipeline mode, sets `outcome: "SUCCESS"` in `ACTIVE_STEP.md`.
+
+**Output format** — hybrid Markdown + YAML frontmatter:
+
+```markdown
+---
+project: "Project Name"
+generated: "YYYY-MM-DD"
+source: VISION.md
+---
+
+# Roadmap
+
+## EPIC-1: Epic Title
+
+---
+id: EPIC-1
+name: "Epic Title"
+sequence: 1
+status: planned
+---
+
+One paragraph description.
+```
+
+Each epic block must have `id`, `name`, `sequence`, and `status` fields. `status` is always `planned` for newly produced roadmaps.
+
+---
+
 ## Skill Invocation
 
-Agents invoke skills via slash commands matching the skill `name` field (e.g. `/research`). The agent reads the `SKILL.md` content and follows its phases for the duration of that invocation.
+Agents invoke skills via slash commands matching the skill `name` field (e.g. `/research`, `/discovery`, `/roadmapping`). The agent reads the `SKILL.md` content and follows its phases for the duration of that invocation.
 
 Skills are agent-local: each agent directory gets its own copy. Changes to a skill template do not retroactively update existing initialized projects.

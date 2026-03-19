@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat: add discovery skill template for guided interview → VISION.md workflow
 
 ### Changed
+- docs(kb): update KB articles for EPIC-3 — document discovery and roadmapping skills, stage-specific ACTIVE_STEP.md templates, and ParseResult anchor fix
 
 - fix: remove obsolete skill documentation and update scaffold tests to use research skill
 

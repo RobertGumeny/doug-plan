@@ -1,10 +1,11 @@
 ---
-title: Orchestrator Loop — EPIC-2
-updated: 2026-03-17
+title: Orchestrator Loop
+updated: 2026-03-18
 category: Architecture
 tags: [orchestrator, state, approval, agent, pipeline]
 related_articles:
   - docs/kb/infrastructure/go.md
+  - docs/kb/architecture/skill-system.md
 ---
 
 # Orchestrator Loop
@@ -32,7 +33,7 @@ Each call to `orchestrator.Run` executes one pipeline step:
 
 1. **Re-entry**: Apply `--fresh` or `--rerun` to clear artifacts (see Re-entry Modes below).
 2. **Infer stage**: `state.InferStage` reads `.doug/plan/` and returns the current stage.
-3. **Write step brief**: `agent.WriteStep` creates `.doug/plan/ACTIVE_STEP.md` with the stage name and a standard briefing template.
+3. **Write step brief**: `agent.WriteStep` creates `.doug/plan/ACTIVE_STEP.md`. It loads a stage-specific template from `internal/templates/steps/<Stage>.md` when one exists (currently `Discovery.md` and `Roadmapping.md`); otherwise a generic template is written.
 4. **Invoke agent**: `agent.Invoke` runs the configured agent command as a subprocess, inheriting stdin/stdout/stderr.
 5. **Parse result**: `agent.ParseResult` reads the `## Agent Result` YAML frontmatter from `ACTIVE_STEP.md` and extracts the `outcome` field.
 6. **Archive step**: `agent.ArchiveStep` moves `ACTIVE_STEP.md` to `.doug/plan/logs/<stage>_<nanosecond>.md`.
@@ -71,6 +72,8 @@ outcome: "SUCCESS"
 
 Valid values: `SUCCESS`, `FAILURE`, `RETRY`.
 
+`ParseResult` searches for `## Agent Result` as a line heading (preceded by a newline). Inline references to the section name inside the Briefing text are ignored. Stage-specific step templates may mention `## Agent Result` in their briefing prose without triggering a false parse.
+
 ## Re-entry Modes
 
 | Mode | CLI flag | Effect |
@@ -108,7 +111,7 @@ CLI --approval flag  →  cfg.ApprovalMode  →  "auto"
 | `agent` | string | Named agent: `claude`, `codex`, or `gemini` |
 | `command` | []string | Full command override (takes precedence over `agent`) |
 | `approval_mode` | string | Default approval mode (`auto`, `soft`, `hard`) |
-| `skill_paths` | []string | Paths to skill directories (unused in EPIC-2) |
+| `skill_paths` | []string | Paths to skill directories (reserved for future use) |
 
 When `command` is set, it is used verbatim. When only `agent` is set, a default command is derived:
 
@@ -139,3 +142,4 @@ Flags:
 | `internal/approval` | `Mode` type, `Parse`, `Gate`, `ErrSkipped` |
 | `internal/config` | `Config` struct, `Load`, `AgentCommand` |
 | `internal/orchestrator` | `Run`, `Options` — wires all packages together |
+| `internal/templates` | Embedded `Init` FS (scaffold files) and `Steps` FS (per-stage ACTIVE_STEP.md templates) |
