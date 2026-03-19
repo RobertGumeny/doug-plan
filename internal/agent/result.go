@@ -37,12 +37,15 @@ func ParseResult(projectRoot string) (Outcome, error) {
 // parseOutcome extracts and validates the outcome from the ## Agent Result
 // frontmatter block in content. Both \n and \r\n line endings are handled.
 func parseOutcome(content string) (Outcome, error) {
-	const section = "## Agent Result"
-	idx := strings.Index(content, section)
+	// Search for "## Agent Result" as a line heading (preceded by a newline)
+	// so that inline references to it in Briefing text are not mistaken for
+	// the actual section header.
+	const sectionHeading = "\n## Agent Result"
+	idx := strings.Index(content, sectionHeading)
 	if idx == -1 {
-		return "", fmt.Errorf("ACTIVE_STEP.md: missing %q section", section)
+		return "", fmt.Errorf("ACTIVE_STEP.md: missing %q section", "## Agent Result")
 	}
-	rest := content[idx+len(section):]
+	rest := content[idx+len(sectionHeading):]
 
 	// Find the opening --- delimiter after the section header.
 	first := strings.Index(rest, "---")
