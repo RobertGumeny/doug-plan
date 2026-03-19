@@ -28,7 +28,9 @@ func TestMain(m *testing.M) {
 		fmt.Fprintf(os.Stderr, "TestMain: build fake agent (skipping e2e tests): %v\n", err)
 	} else {
 		fakeAgentExe = exe
-		defer os.Remove(fakeAgentExe)
+		defer func() {
+			_ = os.Remove(fakeAgentExe)
+		}()
 	}
 
 	os.Exit(m.Run())
@@ -46,7 +48,7 @@ func buildFakeAgent() (string, error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		os.RemoveAll(dir)
+		_ = os.RemoveAll(dir)
 		return "", fmt.Errorf("go build fakeagent: %w", err)
 	}
 	return exe, nil

@@ -38,7 +38,7 @@ func Run(opts Options) error {
 	}
 
 	if stage == state.StageComplete {
-		fmt.Fprintf(opts.Out, "Pipeline complete. All artifacts are present in %s.\n", plansDir)
+		writef(opts.Out, "Pipeline complete. All artifacts are present in %s.\n", plansDir)
 		return nil
 	}
 
@@ -46,7 +46,7 @@ func Run(opts Options) error {
 		return fmt.Errorf("writing ACTIVE_STEP.md: %w", err)
 	}
 
-	fmt.Fprintf(opts.Out, "Pipeline entry point: %s\n", stage)
+	writef(opts.Out, "Pipeline entry point: %s\n", stage)
 
 	cfg, err := config.Load(opts.ProjectRoot)
 	if err != nil {
@@ -58,7 +58,7 @@ func Run(opts Options) error {
 		return fmt.Errorf("resolving agent command: %w", err)
 	}
 
-	fmt.Fprintf(opts.Out, "Invoking agent: %s\n", args[0])
+	writef(opts.Out, "Invoking agent: %s\n", args[0])
 	if err := agent.Invoke(opts.ProjectRoot, args); err != nil {
 		return fmt.Errorf("agent invocation: %w", err)
 	}
@@ -74,7 +74,7 @@ func Run(opts Options) error {
 
 	switch outcome {
 	case agent.OutcomeSuccess:
-		fmt.Fprintf(opts.Out, "Step %s completed successfully.\n", stage)
+		writef(opts.Out, "Step %s completed successfully.\n", stage)
 		if err := runApprovalGate(opts, cfg, stage.String()); err != nil {
 			if errors.Is(err, approval.ErrSkipped) {
 				return nil
@@ -84,7 +84,7 @@ func Run(opts Options) error {
 	case agent.OutcomeFailure:
 		return fmt.Errorf("step %s failed: agent reported FAILURE", stage)
 	case agent.OutcomeRetry:
-		fmt.Fprintf(opts.Out, "Step %s requesting retry.\n", stage)
+		writef(opts.Out, "Step %s requesting retry.\n", stage)
 	}
 
 	return nil
@@ -103,7 +103,7 @@ func applyReentry(opts Options, plansDir string) error {
 		if err := state.ClearAllArtifacts(plansDir); err != nil {
 			return fmt.Errorf("clearing artifacts for fresh start: %w", err)
 		}
-		fmt.Fprintf(opts.Out, "Re-entry: cleared all plan artifacts. Starting at Discovery.\n")
+		writef(opts.Out, "Re-entry: cleared all plan artifacts. Starting at Discovery.\n")
 		return nil
 	}
 	if opts.RerunStage != "" {
@@ -114,9 +114,13 @@ func applyReentry(opts Options, plansDir string) error {
 		if err := state.ClearArtifactsFromStage(plansDir, stage); err != nil {
 			return fmt.Errorf("clearing artifacts for re-run of %s: %w", stage, err)
 		}
-		fmt.Fprintf(opts.Out, "Re-entry: cleared artifacts from %s onwards.\n", stage)
+		writef(opts.Out, "Re-entry: cleared artifacts from %s onwards.\n", stage)
 	}
 	return nil
+}
+
+func writef(w io.Writer, format string, args ...any) {
+	_, _ = fmt.Fprintf(w, format, args...)
 }
 
 // runApprovalGate resolves the approval mode (CLI flag takes precedence over

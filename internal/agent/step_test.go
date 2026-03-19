@@ -45,9 +45,9 @@ func TestWriteStep_Discovery_TemplateContent(t *testing.T) {
 
 	content := string(data)
 	checks := []string{
-		"VISION.md",      // artifact path
-		"/discovery",     // skill instruction
-		"outcome: \"\"",  // result stub
+		"VISION.md",     // artifact path
+		"/discovery",    // skill instruction
+		"outcome: \"\"", // result stub
 	}
 	for _, want := range checks {
 		if !strings.Contains(content, want) {
@@ -70,10 +70,10 @@ func TestWriteStep_Roadmapping_TemplateContent(t *testing.T) {
 
 	content := string(data)
 	checks := []string{
-		"ROADMAP.md",     // artifact path
-		"/roadmapping",   // skill instruction
-		"VISION.md",      // prerequisite
-		"outcome: \"\"",  // result stub
+		"ROADMAP.md",    // artifact path
+		"/roadmapping",  // skill instruction
+		"VISION.md",     // prerequisite
+		"outcome: \"\"", // result stub
 	}
 	for _, want := range checks {
 		if !strings.Contains(content, want) {

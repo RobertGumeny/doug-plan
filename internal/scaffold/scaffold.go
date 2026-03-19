@@ -51,17 +51,17 @@ func Run(opts Options) error {
 		return err
 	}
 
-	fmt.Fprintf(opts.Out, "doug-plan init complete\n\n")
+	writef(opts.Out, "doug-plan init complete\n\n")
 	if len(created) > 0 {
-		fmt.Fprintf(opts.Out, "Created:\n")
+		writef(opts.Out, "Created:\n")
 		for _, f := range created {
-			fmt.Fprintf(opts.Out, "  %s\n", f)
+			writef(opts.Out, "  %s\n", f)
 		}
 	}
 	if len(skipped) > 0 {
-		fmt.Fprintf(opts.Out, "Skipped (already exist):\n")
+		writef(opts.Out, "Skipped (already exist):\n")
 		for _, f := range skipped {
-			fmt.Fprintf(opts.Out, "  %s\n", f)
+			writef(opts.Out, "  %s\n", f)
 		}
 	}
 
@@ -109,6 +109,10 @@ func normalizeAgents(agents []string) []string {
 		return []string{"claude"}
 	}
 	return out
+}
+
+func writef(w io.Writer, format string, args ...any) {
+	_, _ = fmt.Fprintf(w, format, args...)
 }
 
 func buildConfig(agents []string) string {

@@ -13,10 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat: add roadmapping skill template for VISION.md → ROADMAP.md workflow in hybrid Markdown + YAML frontmatter format
 - feat: add optional research report ingestion to Discovery skill
 - feat: add discovery skill template for guided interview → VISION.md workflow
+- feat: add golangci-lint configuration and refactor output formatting
 
 ### Changed
 - docs(kb): update KB articles for EPIC-3 — document discovery and roadmapping skills, stage-specific ACTIVE_STEP.md templates, and ParseResult anchor fix
-
 - fix: remove obsolete skill documentation and update scaffold tests to use research skill
 
 ### Fixed
