@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- feat: implement Handoff skill for converting scoped epics to PRD.md and tasks.yaml
 - feat: EPIC-4-002 — implement re-entry at Scoping for subsequent epics
 - feat: implement Scoping skill and add StageScoping to pipeline
 - feat: EPIC-3-005 — end-to-end pipeline validation through Roadmapping output; add orchestrator e2e test with fakeagent helper, ROADMAP.md format validator, and regression test for inline section reference bug
