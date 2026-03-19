@@ -82,6 +82,59 @@ func TestWriteStep_Roadmapping_TemplateContent(t *testing.T) {
 	}
 }
 
+func TestWriteStep_Scoping_TemplateContent(t *testing.T) {
+	root := t.TempDir()
+
+	if err := WriteStep(root, state.StageScoping); err != nil {
+		t.Fatalf("WriteStep: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(root, ".doug", "plan", activeStepFile))
+	if err != nil {
+		t.Fatalf("reading ACTIVE_STEP.md: %v", err)
+	}
+
+	content := string(data)
+	checks := []string{
+		"SCOPED.md",     // artifact path
+		"/scoping",      // skill instruction
+		"ROADMAP.md",    // prerequisite
+		"VISION.md",     // prerequisite
+		"outcome: \"\"", // result stub
+	}
+	for _, want := range checks {
+		if !strings.Contains(content, want) {
+			t.Errorf("Scoping ACTIVE_STEP.md missing %q; got:\n%s", want, content)
+		}
+	}
+}
+
+func TestWriteStep_PRD_TemplateContent(t *testing.T) {
+	root := t.TempDir()
+
+	if err := WriteStep(root, state.StagePRD); err != nil {
+		t.Fatalf("WriteStep: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(root, ".doug", "plan", activeStepFile))
+	if err != nil {
+		t.Fatalf("reading ACTIVE_STEP.md: %v", err)
+	}
+
+	content := string(data)
+	checks := []string{
+		"PRD.md",        // artifact path
+		"/handoff",      // skill instruction
+		"SCOPED.md",     // prerequisite
+		"outcome: \"\"", // result stub
+	}
+	for _, want := range checks {
+		if !strings.Contains(content, want) {
+			t.Errorf("PRD ACTIVE_STEP.md missing %q; got:\n%s", want, content)
+		}
+	}
+}
+
 func TestWriteStep_OverwritesExisting(t *testing.T) {
 	root := t.TempDir()
 

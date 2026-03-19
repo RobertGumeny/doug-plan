@@ -291,6 +291,89 @@ func TestEndToEnd_ScopingReentry(t *testing.T) {
 	}
 }
 
+// TestEndToEnd_FullPipeline runs the orchestrator through all pipeline stages —
+// Discovery, Roadmapping, Scoping (with re-entry), and PRD/Handoff (with
+// re-entry) — using the fake agent subprocess, and verifies all output
+// artifacts are present at the end.
+func TestEndToEnd_FullPipeline(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping end-to-end test in short mode")
+	}
+	if fakeAgentExe == "" {
+		t.Skip("fake agent binary not built")
+	}
+
+	root := t.TempDir()
+	planDir := filepath.Join(root, ".doug", "plan")
+	if err := os.MkdirAll(planDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir planDir: %v", err)
+	}
+
+	cfgContent := fmt.Sprintf("command:\n  - %s\napproval_mode: auto\n", fakeAgentExe)
+	if err := os.WriteFile(filepath.Join(planDir, "doug-plan.yaml"), []byte(cfgContent), 0o644); err != nil {
+		t.Fatalf("setup: write config: %v", err)
+	}
+
+	opts := orchestrator.Options{
+		ProjectRoot:  root,
+		Out:          io.Discard,
+		In:           strings.NewReader(""),
+		ApprovalMode: "auto",
+	}
+
+	// Discovery
+	if err := orchestrator.Run(opts); err != nil {
+		t.Fatalf("Discovery stage failed: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(planDir, "VISION.md")); os.IsNotExist(err) {
+		t.Fatal("VISION.md not created after Discovery")
+	}
+
+	// Roadmapping
+	if err := orchestrator.Run(opts); err != nil {
+		t.Fatalf("Roadmapping stage failed: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(planDir, "ROADMAP.md")); os.IsNotExist(err) {
+		t.Fatal("ROADMAP.md not created after Roadmapping")
+	}
+
+	// Scoping — fakeRoadmap has 4 epics; each run scopes one, returning RETRY
+	// until the last epic, at which point SCOPED.md is written and SUCCESS returned.
+	const numEpics = 4
+	for i := range numEpics {
+		if err := orchestrator.Run(opts); err != nil {
+			t.Fatalf("Scoping run %d failed: %v", i+1, err)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(planDir, "SCOPED.md")); os.IsNotExist(err) {
+		t.Fatal("SCOPED.md not created after all Scoping runs")
+	}
+	for _, id := range []string{"EPIC-1", "EPIC-2", "EPIC-3", "EPIC-4"} {
+		if _, err := os.Stat(filepath.Join(planDir, "epics", id, "SCOPED.md")); os.IsNotExist(err) {
+			t.Errorf("per-epic SCOPED.md missing for %s", id)
+		}
+	}
+
+	// Handoff (PRD stage) — one run per epic; last run writes global PRD.md.
+	for i := range numEpics {
+		if err := orchestrator.Run(opts); err != nil {
+			t.Fatalf("Handoff run %d failed: %v", i+1, err)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(planDir, "PRD.md")); os.IsNotExist(err) {
+		t.Fatal("PRD.md not created after all Handoff runs")
+	}
+	for _, id := range []string{"EPIC-1", "EPIC-2", "EPIC-3", "EPIC-4"} {
+		epicDir := filepath.Join(planDir, "epics", id)
+		if _, err := os.Stat(filepath.Join(epicDir, "PRD.md")); os.IsNotExist(err) {
+			t.Errorf("per-epic PRD.md missing for %s", id)
+		}
+		if _, err := os.Stat(filepath.Join(epicDir, "tasks.yaml")); os.IsNotExist(err) {
+			t.Errorf("per-epic tasks.yaml missing for %s", id)
+		}
+	}
+}
+
 // TestValidateRoadmapFormat_Valid verifies the validator accepts a correctly
 // formatted ROADMAP.md.
 func TestValidateRoadmapFormat_Valid(t *testing.T) {

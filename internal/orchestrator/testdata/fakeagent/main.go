@@ -109,6 +109,73 @@ func main() {
 				outcome = "RETRY"
 			}
 		}
+	case strings.Contains(content, "**Stage**: PRD"):
+		roadmapData, err := os.ReadFile(filepath.Join(planDir, "ROADMAP.md"))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "fakeagent: read ROADMAP.md:", err)
+			os.Exit(1)
+		}
+		epicIDs := epicIDsFromRoadmap(string(roadmapData))
+		if len(epicIDs) == 0 {
+			fmt.Fprintln(os.Stderr, "fakeagent: no epic IDs found in ROADMAP.md")
+			os.Exit(1)
+		}
+		// Find the next scoped epic that has not yet been handed off.
+		var nextEpic string
+		for _, id := range epicIDs {
+			_, scopedErr := os.Stat(filepath.Join(planDir, "epics", id, "SCOPED.md"))
+			_, prdErr := os.Stat(filepath.Join(planDir, "epics", id, "PRD.md"))
+			_, tasksErr := os.Stat(filepath.Join(planDir, "epics", id, "tasks.yaml"))
+			if scopedErr == nil && (os.IsNotExist(prdErr) || os.IsNotExist(tasksErr)) {
+				nextEpic = id
+				break
+			}
+		}
+		if nextEpic == "" {
+			// All scoped epics already handed off — write the global completion marker.
+			if err := os.WriteFile(filepath.Join(planDir, "PRD.md"), []byte(fakePRDComplete), 0o644); err != nil {
+				fmt.Fprintln(os.Stderr, "fakeagent: write PRD.md:", err)
+				os.Exit(1)
+			}
+		} else {
+			epicDir := filepath.Join(planDir, "epics", nextEpic)
+			if err := os.MkdirAll(epicDir, 0o755); err != nil {
+				fmt.Fprintln(os.Stderr, "fakeagent: mkdir epics dir:", err)
+				os.Exit(1)
+			}
+			prdContent := fmt.Sprintf("# PRD — %s\n\nHandoff complete.\n", nextEpic)
+			if err := os.WriteFile(filepath.Join(epicDir, "PRD.md"), []byte(prdContent), 0o644); err != nil {
+				fmt.Fprintln(os.Stderr, "fakeagent: write per-epic PRD.md:", err)
+				os.Exit(1)
+			}
+			tasksContent := fmt.Sprintf("epic:\n  id: %q\n  name: %q\n  tasks: []\n", nextEpic, nextEpic)
+			if err := os.WriteFile(filepath.Join(epicDir, "tasks.yaml"), []byte(tasksContent), 0o644); err != nil {
+				fmt.Fprintln(os.Stderr, "fakeagent: write per-epic tasks.yaml:", err)
+				os.Exit(1)
+			}
+			// Check whether all scoped epics are now handed off.
+			allHandedOff := true
+			for _, id := range epicIDs {
+				_, scopedErr := os.Stat(filepath.Join(planDir, "epics", id, "SCOPED.md"))
+				if os.IsNotExist(scopedErr) {
+					continue // not scoped yet — skip
+				}
+				_, prdErr := os.Stat(filepath.Join(planDir, "epics", id, "PRD.md"))
+				_, tasksErr := os.Stat(filepath.Join(planDir, "epics", id, "tasks.yaml"))
+				if os.IsNotExist(prdErr) || os.IsNotExist(tasksErr) {
+					allHandedOff = false
+					break
+				}
+			}
+			if allHandedOff {
+				if err := os.WriteFile(filepath.Join(planDir, "PRD.md"), []byte(fakePRDComplete), 0o644); err != nil {
+					fmt.Fprintln(os.Stderr, "fakeagent: write PRD.md:", err)
+					os.Exit(1)
+				}
+			} else {
+				outcome = "RETRY"
+			}
+		}
 	default:
 		fmt.Fprintf(os.Stderr, "fakeagent: unrecognised stage in ACTIVE_STEP.md\n%s\n", content)
 		os.Exit(1)
@@ -120,6 +187,11 @@ func main() {
 		os.Exit(1)
 	}
 }
+
+const fakePRDComplete = `# Handoff Complete
+
+All scoped epics have been handed off. Per-epic PRD.md and tasks.yaml files are in ` + "`.doug/plan/epics/`." + `
+`
 
 const fakeScopedComplete = `# Scoping Complete
 
