@@ -213,6 +213,84 @@ func validateRoadmapFormat(content string) error {
 	return nil
 }
 
+// TestEndToEnd_ScopingReentry verifies that when VISION.md and ROADMAP.md are
+// already present, the orchestrator drops directly into Scoping — skipping
+// Discovery and Roadmapping — and re-enters Scoping for each subsequent epic
+// via the RETRY loop until all epics are scoped.
+func TestEndToEnd_ScopingReentry(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping end-to-end test in short mode")
+	}
+	if fakeAgentExe == "" {
+		t.Skip("fake agent binary not built")
+	}
+
+	root := t.TempDir()
+	planDir := filepath.Join(root, ".doug", "plan")
+	if err := os.MkdirAll(planDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir planDir: %v", err)
+	}
+
+	config := fmt.Sprintf("command:\n  - %s\napproval_mode: auto\n", fakeAgentExe)
+	if err := os.WriteFile(filepath.Join(planDir, "doug-plan.yaml"), []byte(config), 0o644); err != nil {
+		t.Fatalf("setup: write config: %v", err)
+	}
+
+	var out strings.Builder
+	opts := orchestrator.Options{
+		ProjectRoot:  root,
+		Out:          &out,
+		In:           strings.NewReader(""),
+		ApprovalMode: "auto",
+	}
+
+	// Run Discovery and Roadmapping first so that VISION.md and ROADMAP.md
+	// exist before Scoping begins. This simulates a real prior pipeline run.
+	for _, stage := range []string{"Discovery", "Roadmapping"} {
+		out.Reset()
+		if err := orchestrator.Run(opts); err != nil {
+			t.Fatalf("%s stage failed: %v", stage, err)
+		}
+	}
+
+	// All subsequent runs must re-enter at Scoping — never at Discovery or
+	// Roadmapping — because VISION.md and ROADMAP.md are already present.
+	// fakeRoadmap defines 4 epics; the first 3 runs return RETRY and the 4th
+	// writes global SCOPED.md and returns SUCCESS.
+	const numEpics = 4
+	for i := range numEpics {
+		out.Reset()
+		if err := orchestrator.Run(opts); err != nil {
+			t.Fatalf("run %d: orchestrator.Run failed: %v", i+1, err)
+		}
+		output := out.String()
+
+		// Every run must enter at Scoping — never at Discovery or Roadmapping.
+		if !strings.Contains(output, "Pipeline entry point: Scoping") {
+			t.Errorf("run %d: expected Scoping entry point, got:\n%s", i+1, output)
+		}
+		if strings.Contains(output, "Pipeline entry point: Discovery") {
+			t.Errorf("run %d: Discovery was unexpectedly re-run:\n%s", i+1, output)
+		}
+		if strings.Contains(output, "Pipeline entry point: Roadmapping") {
+			t.Errorf("run %d: Roadmapping was unexpectedly re-run:\n%s", i+1, output)
+		}
+	}
+
+	// After all epics are scoped the global SCOPED.md must exist.
+	if _, err := os.Stat(filepath.Join(planDir, "SCOPED.md")); os.IsNotExist(err) {
+		t.Fatal("SCOPED.md not created after all epics scoped")
+	}
+
+	// Every per-epic SCOPED.md must exist.
+	for _, id := range []string{"EPIC-1", "EPIC-2", "EPIC-3", "EPIC-4"} {
+		path := filepath.Join(planDir, "epics", id, "SCOPED.md")
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			t.Errorf("per-epic SCOPED.md missing for %s", id)
+		}
+	}
+}
+
 // TestValidateRoadmapFormat_Valid verifies the validator accepts a correctly
 // formatted ROADMAP.md.
 func TestValidateRoadmapFormat_Valid(t *testing.T) {

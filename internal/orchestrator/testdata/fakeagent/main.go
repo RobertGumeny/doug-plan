@@ -10,6 +10,22 @@ import (
 	"strings"
 )
 
+// epicIDsFromRoadmap extracts epic IDs (e.g. "EPIC-1") from a ROADMAP.md
+// by scanning for lines of the form "id: EPIC-N".
+func epicIDsFromRoadmap(roadmap string) []string {
+	var ids []string
+	for _, line := range strings.Split(roadmap, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "id: ") {
+			id := strings.TrimPrefix(line, "id: ")
+			if strings.HasPrefix(id, "EPIC-") {
+				ids = append(ids, id)
+			}
+		}
+	}
+	return ids
+}
+
 func main() {
 	root, err := os.Getwd()
 	if err != nil {
@@ -27,6 +43,8 @@ func main() {
 	}
 	content := string(data)
 
+	outcome := "SUCCESS"
+
 	switch {
 	case strings.Contains(content, "**Stage**: Discovery"):
 		if err := os.WriteFile(filepath.Join(planDir, "VISION.md"), []byte(fakeVision), 0o644); err != nil {
@@ -38,17 +56,75 @@ func main() {
 			fmt.Fprintln(os.Stderr, "fakeagent: write ROADMAP.md:", err)
 			os.Exit(1)
 		}
+	case strings.Contains(content, "**Stage**: Scoping"):
+		roadmapData, err := os.ReadFile(filepath.Join(planDir, "ROADMAP.md"))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "fakeagent: read ROADMAP.md:", err)
+			os.Exit(1)
+		}
+		epicIDs := epicIDsFromRoadmap(string(roadmapData))
+		if len(epicIDs) == 0 {
+			fmt.Fprintln(os.Stderr, "fakeagent: no epic IDs found in ROADMAP.md")
+			os.Exit(1)
+		}
+		// Find the next epic that has not yet been scoped.
+		var nextEpic string
+		for _, id := range epicIDs {
+			if _, err := os.Stat(filepath.Join(planDir, "epics", id, "SCOPED.md")); os.IsNotExist(err) {
+				nextEpic = id
+				break
+			}
+		}
+		if nextEpic == "" {
+			// All epics are already scoped — write the completion marker.
+			if err := os.WriteFile(filepath.Join(planDir, "SCOPED.md"), []byte(fakeScopedComplete), 0o644); err != nil {
+				fmt.Fprintln(os.Stderr, "fakeagent: write SCOPED.md:", err)
+				os.Exit(1)
+			}
+		} else {
+			epicDir := filepath.Join(planDir, "epics", nextEpic)
+			if err := os.MkdirAll(epicDir, 0o755); err != nil {
+				fmt.Fprintln(os.Stderr, "fakeagent: mkdir epics dir:", err)
+				os.Exit(1)
+			}
+			scopedContent := fmt.Sprintf("# Scoped: %s\n", nextEpic)
+			if err := os.WriteFile(filepath.Join(epicDir, "SCOPED.md"), []byte(scopedContent), 0o644); err != nil {
+				fmt.Fprintln(os.Stderr, "fakeagent: write per-epic SCOPED.md:", err)
+				os.Exit(1)
+			}
+			// Check whether all epics are now scoped.
+			allScoped := true
+			for _, id := range epicIDs {
+				if _, err := os.Stat(filepath.Join(planDir, "epics", id, "SCOPED.md")); os.IsNotExist(err) {
+					allScoped = false
+					break
+				}
+			}
+			if allScoped {
+				if err := os.WriteFile(filepath.Join(planDir, "SCOPED.md"), []byte(fakeScopedComplete), 0o644); err != nil {
+					fmt.Fprintln(os.Stderr, "fakeagent: write SCOPED.md:", err)
+					os.Exit(1)
+				}
+			} else {
+				outcome = "RETRY"
+			}
+		}
 	default:
 		fmt.Fprintf(os.Stderr, "fakeagent: unrecognised stage in ACTIVE_STEP.md\n%s\n", content)
 		os.Exit(1)
 	}
 
-	updated := strings.ReplaceAll(content, `outcome: ""`, `outcome: "SUCCESS"`)
+	updated := strings.ReplaceAll(content, `outcome: ""`, `outcome: "`+outcome+`"`)
 	if err := os.WriteFile(stepPath, []byte(updated), 0o644); err != nil {
 		fmt.Fprintln(os.Stderr, "fakeagent: update ACTIVE_STEP.md:", err)
 		os.Exit(1)
 	}
 }
+
+const fakeScopedComplete = `# Scoping Complete
+
+All epics from ROADMAP.md have been scoped. Scoped definitions are in ` + "`.doug/plan/epics/`." + `
+`
 
 const fakeVision = `# Vision
 
