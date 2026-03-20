@@ -1,11 +1,12 @@
 ---
 title: Orchestrator Loop
-updated: 2026-03-19
+updated: 2026-03-20
 category: Architecture
 tags: [orchestrator, state, approval, agent, pipeline]
 related_articles:
   - docs/kb/infrastructure/go.md
   - docs/kb/architecture/skill-system.md
+  - docs/kb/architecture/browser-ui.md
 ---
 
 # Orchestrator Loop
@@ -93,9 +94,11 @@ After a successful step, the gate runs before the pipeline can advance.
 | ---- | -------- |
 | `auto` (default) | Returns immediately with no prompt |
 | `soft` | Prints summary; Enter to advance, `skip` to stop |
-| `hard` | Blocks until the user types `yes` |
+| `hard` | Opens browser review UI; blocks until user clicks Approve |
 
-When `soft` mode receives `skip`, `approval.Gate` returns `approval.ErrSkipped`. The orchestrator checks for this error and returns `nil` (no error, pipeline just stops).
+In `hard` mode the orchestrator calls `approval.BrowserGate`, which starts an embedded HTTP server, opens the browser, and blocks until `POST /approve` is received. The approved content is written back to disk before the pipeline advances. See [Browser UI](browser-ui.md) for the full flow.
+
+In `soft` mode, when the user types `skip`, `approval.Gate` returns `approval.ErrSkipped`. The orchestrator checks for this error and returns `nil` (no error, pipeline just stops).
 
 Approval mode is resolved with CLI flag taking precedence over config:
 
@@ -138,9 +141,11 @@ Flags:
 
 | Package | Responsibility |
 | ------- | -------------- |
-| `internal/state` | Stage type, `InferStage`, `ClearArtifacts*`, `StageFromString` |
+| `internal/state` | Stage type, `InferStage`, `ArtifactFile`, `ClearArtifacts*`, `StageFromString` |
 | `internal/agent` | `WriteStep`, `Invoke`, `ParseResult`, `ArchiveStep`, `Outcome` type |
-| `internal/approval` | `Mode` type, `Parse`, `Gate`, `ErrSkipped` |
+| `internal/approval` | `Mode` type, `Parse`, `Gate`, `BrowserGate`, `ErrSkipped` |
 | `internal/config` | `Config` struct, `Load`, `AgentCommand` |
 | `internal/orchestrator` | `Run`, `Options` — wires all packages together |
+| `internal/server` | Embedded HTTP server for browser review (`Serve`) |
+| `internal/ui` | `Bundle embed.FS` — compiled React bundle (`bundle.html`) |
 | `internal/templates` | Embedded `Init` FS (scaffold files) and `Steps` FS (per-stage ACTIVE_STEP.md templates) |

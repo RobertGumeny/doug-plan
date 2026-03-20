@@ -1,6 +1,6 @@
 ---
 title: Go Infrastructure & Best Practices
-updated: 2026-03-17
+updated: 2026-03-20
 category: Infrastructure
 tags: [go, golang, build, testing]
 related_articles:
@@ -39,11 +39,14 @@ doug-plan/
 │   ├── layout/         # Shared path helpers for .doug/plan-owned files
 │   ├── scaffold/       # scaffold.Run() — creates .doug/plan/, AGENTS.md, CLAUDE.md, and agent skill dirs
 │   ├── config/         # Config struct, Load, AgentCommand — reads .doug/plan/doug-plan.yaml
-│   ├── orchestrator/   # Run(Options) — full pipeline loop (EPIC-2)
+│   ├── orchestrator/   # Run(Options) — full pipeline loop
 │   ├── agent/          # WriteStep, Invoke, ParseResult, ArchiveStep, Outcome type
-│   ├── approval/       # Gate (auto/soft/hard), Parse, ErrSkipped
-│   ├── state/          # Stage type, InferStage, ClearArtifacts*, StageFromString
+│   ├── approval/       # Gate (auto/soft/hard), BrowserGate, Parse, ErrSkipped
+│   ├── server/         # Embedded HTTP server for browser review (Serve)
+│   ├── ui/             # Bundle embed.FS — compiled React bundle (bundle.html)
+│   ├── state/          # Stage type, InferStage, ArtifactFile, ClearArtifacts*, StageFromString
 │   └── templates/      # Embedded init templates for AGENTS/CLAUDE/provider scaffolding
+├── ui/                 # React source; builds to internal/ui/bundle.html via build.js + esbuild
 ├── main.go             # One line: cmd.Execute()
 ```
 
@@ -179,12 +182,15 @@ if testing.Short() {
 
 ## Build
 
-| Command      | Effect                              |
-| ------------ | ----------------------------------- |
-| `make build` | `go build -o doug-plan .`           |
-| `make test`  | `go test ./...`                     |
-| `make lint`  | `go vet ./...`                      |
-| `make clean` | `rm -f doug-plan`                   |
+| Command           | Effect                                                          |
+| ----------------- | --------------------------------------------------------------- |
+| `make build-ui`   | `npm install --prefix ui && node ui/build.js` → `internal/ui/bundle.html` |
+| `make build`      | Runs `build-ui` then `go build -o doug-plan .`                  |
+| `make test`       | `go test ./...`                                                 |
+| `make lint`       | `go vet ./...` + `golangci-lint run ./...`                      |
+| `make clean`      | `rm -f doug-plan`                                               |
+
+**Build-time Node.js dependency**: `make build-ui` requires Node.js and npm. This is a build-time-only dependency — the compiled binary embeds `bundle.html` and has no Node.js runtime requirement. The `bundle.html` file is committed to the repository so `go build` alone works without Node.js if the bundle is already up to date.
 
 ## Edge Cases & Gotchas
 
