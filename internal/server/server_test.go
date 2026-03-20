@@ -47,7 +47,7 @@ func TestServe_Endpoints(t *testing.T) {
 	out := newURLCapture()
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- Serve(artifactPath, "Roadmapping", out)
+		errCh <- Serve(artifactPath, "", "Roadmapping", out)
 	}()
 
 	serverURL := out.waitForURL(t, 5*time.Second)
@@ -84,7 +84,7 @@ func TestServe_Endpoints(t *testing.T) {
 	}
 
 	// POST /approve must return 204, update disk, and shut down the server.
-	body, _ := json.Marshal(map[string]string{"content": updated})
+	body, _ := json.Marshal(map[string]string{"content": updated, "secondaryContent": ""})
 	resp, err = http.Post(serverURL+"/approve", "application/json", bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST /approve: %v", err)
@@ -123,7 +123,7 @@ func TestServe_BadApproveBody(t *testing.T) {
 	out := newURLCapture()
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- Serve(artifactPath, "Discovery", out)
+		errCh <- Serve(artifactPath, "", "Discovery", out)
 	}()
 
 	serverURL := out.waitForURL(t, 5*time.Second)
@@ -138,7 +138,7 @@ func TestServe_BadApproveBody(t *testing.T) {
 	}
 
 	// Server must still be running — send a valid approval to clean up.
-	body, _ := json.Marshal(map[string]string{"content": "done"})
+	body, _ := json.Marshal(map[string]string{"content": "done", "secondaryContent": ""})
 	resp, err = http.Post(serverURL+"/approve", "application/json", bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("cleanup POST /approve: %v", err)

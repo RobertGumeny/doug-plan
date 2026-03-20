@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- feat: EPIC-5-004 — scoped epic definition view with guided per-task fields; PRD/tasks.yaml split layout view
 - feat: EPIC-5-003 — VISION.md and ROADMAP.md form views verified complete
 - feat: EPIC-5-002 — build and embed compiled React bundle as self-contained HTML
 - feat: EPIC-5-001 — embedded HTTP server with dynamic port, embed.FS bundle, browser gate

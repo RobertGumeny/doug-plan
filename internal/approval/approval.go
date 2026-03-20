@@ -55,8 +55,9 @@ func Gate(mode Mode, stage string, out io.Writer, in io.Reader) error {
 // BrowserGate starts an embedded HTTP server on a dynamic port, opens the
 // default browser to display the artifact for review, and blocks until the
 // user POSTs approval. The approved content is written back to artifactPath.
-func BrowserGate(artifactPath string, stage string, out io.Writer) error {
-	return server.Serve(artifactPath, stage, out)
+// If secondaryPath is non-empty, that file is also served and saved on approval.
+func BrowserGate(artifactPath, secondaryPath, stage string, out io.Writer) error {
+	return server.Serve(artifactPath, secondaryPath, stage, out)
 }
 
 func writef(w io.Writer, format string, args ...any) {

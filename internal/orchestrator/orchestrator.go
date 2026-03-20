@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 
 	"github.com/robertgumeny/doug-plan/internal/agent"
@@ -144,7 +145,15 @@ func runApprovalGate(opts Options, cfg *config.Config, stage state.Stage, plansD
 	if mode == approval.ModeHard {
 		artifactFile := state.ArtifactFile(stage)
 		if artifactFile != "" {
-			return approval.BrowserGate(filepath.Join(plansDir, artifactFile), stage.String(), opts.Out)
+			primaryPath := filepath.Join(plansDir, artifactFile)
+			secondaryPath := ""
+			if stage == state.StagePRD {
+				candidate := filepath.Join(plansDir, "tasks.yaml")
+				if _, statErr := os.Stat(candidate); statErr == nil {
+					secondaryPath = candidate
+				}
+			}
+			return approval.BrowserGate(primaryPath, secondaryPath, stage.String(), opts.Out)
 		}
 	}
 

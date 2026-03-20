@@ -16,6 +16,7 @@ const VIEWS = {
 export default function App() {
   const [stage, setStage] = useState(null);
   const [content, setContent] = useState('');
+  const [secondaryContent, setSecondaryContent] = useState('');
   const [status, setStatus] = useState('');
   const [approved, setApproved] = useState(false);
 
@@ -25,16 +26,20 @@ export default function App() {
       .then(data => {
         setStage(data.stage);
         setContent(data.content);
+        setSecondaryContent(data.secondaryContent || '');
       })
       .catch(() => setStatus('Error loading artifact.'));
   }, []);
 
-  function handleApprove(updatedContent) {
+  function handleApprove(updatedContent, updatedSecondary) {
     setStatus('Sending…');
     fetch('/approve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: updatedContent }),
+      body: JSON.stringify({
+        content: updatedContent,
+        secondaryContent: updatedSecondary || '',
+      }),
     })
       .then(r => {
         if (!r.ok) throw new Error('Server error');
@@ -74,7 +79,13 @@ export default function App() {
       <p style={styles.subtitle}>
         Review and edit the artifact below, then click <strong>Approve</strong> to advance the pipeline.
       </p>
-      <View content={content} onApprove={handleApprove} status={status} setStatus={setStatus} />
+      <View
+        content={content}
+        secondaryContent={secondaryContent}
+        onApprove={handleApprove}
+        status={status}
+        setStatus={setStatus}
+      />
     </div>
   );
 }
@@ -82,7 +93,7 @@ export default function App() {
 const styles = {
   page: {
     fontFamily: 'monospace',
-    maxWidth: 900,
+    maxWidth: 1100,
     margin: '40px auto',
     padding: '0 20px',
   },
