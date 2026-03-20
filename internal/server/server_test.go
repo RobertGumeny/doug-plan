@@ -57,7 +57,9 @@ func TestServe_Endpoints(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GET /: %v", err)
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Errorf("GET /: closing response body: %v", err)
+	}
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("GET /: status %d, want 200", resp.StatusCode)
 	}
@@ -72,10 +74,14 @@ func TestServe_Endpoints(t *testing.T) {
 	}
 	var artifact map[string]string
 	if err := json.NewDecoder(resp.Body).Decode(&artifact); err != nil {
-		resp.Body.Close()
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			t.Errorf("GET /artifact: closing response body after decode failure: %v", closeErr)
+		}
 		t.Fatalf("GET /artifact decode: %v", err)
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Errorf("GET /artifact: closing response body: %v", err)
+	}
 	if artifact["stage"] != "Roadmapping" {
 		t.Errorf("artifact stage = %q, want Roadmapping", artifact["stage"])
 	}
@@ -89,7 +95,9 @@ func TestServe_Endpoints(t *testing.T) {
 	if err != nil {
 		t.Fatalf("POST /approve: %v", err)
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Errorf("POST /approve: closing response body: %v", err)
+	}
 	if resp.StatusCode != http.StatusNoContent {
 		t.Errorf("POST /approve: status %d, want 204", resp.StatusCode)
 	}
@@ -132,7 +140,9 @@ func TestServe_BadApproveBody(t *testing.T) {
 	if err != nil {
 		t.Fatalf("POST /approve: %v", err)
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Errorf("POST /approve bad body: closing response body: %v", err)
+	}
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("POST /approve bad body: status %d, want 400", resp.StatusCode)
 	}
@@ -143,7 +153,9 @@ func TestServe_BadApproveBody(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cleanup POST /approve: %v", err)
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Errorf("cleanup POST /approve: closing response body: %v", err)
+	}
 
 	select {
 	case err := <-errCh:
