@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/robertgumeny/doug-plan/internal/server"
 )
 
 // Mode controls how the approval gate behaves before advancing the pipeline.
@@ -48,6 +50,13 @@ func Gate(mode Mode, stage string, out io.Writer, in io.Reader) error {
 	default:
 		return fmt.Errorf("unknown approval mode %q", mode)
 	}
+}
+
+// BrowserGate starts an embedded HTTP server on a dynamic port, opens the
+// default browser to display the artifact for review, and blocks until the
+// user POSTs approval. The approved content is written back to artifactPath.
+func BrowserGate(artifactPath string, stage string, out io.Writer) error {
+	return server.Serve(artifactPath, stage, out)
 }
 
 func writef(w io.Writer, format string, args ...any) {

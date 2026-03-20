@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"path/filepath"
 
 	"github.com/robertgumeny/doug-plan/internal/agent"
 	"github.com/robertgumeny/doug-plan/internal/approval"
@@ -75,7 +76,7 @@ func Run(opts Options) error {
 	switch outcome {
 	case agent.OutcomeSuccess:
 		writef(opts.Out, "Step %s completed successfully.\n", stage)
-		if err := runApprovalGate(opts, cfg, stage.String()); err != nil {
+		if err := runApprovalGate(opts, cfg, stage, plansDir); err != nil {
 			if errors.Is(err, approval.ErrSkipped) {
 				return nil
 			}
@@ -125,7 +126,8 @@ func writef(w io.Writer, format string, args ...any) {
 
 // runApprovalGate resolves the approval mode (CLI flag takes precedence over
 // config) and runs the gate for the completed stage.
-func runApprovalGate(opts Options, cfg *config.Config, stage string) error {
+// Hard mode opens the browser review UI; auto and soft use terminal gates.
+func runApprovalGate(opts Options, cfg *config.Config, stage state.Stage, plansDir string) error {
 	modeStr := cfg.ApprovalMode
 	if opts.ApprovalMode != "" {
 		modeStr = opts.ApprovalMode
@@ -139,5 +141,12 @@ func runApprovalGate(opts Options, cfg *config.Config, stage string) error {
 		return fmt.Errorf("resolving approval mode: %w", err)
 	}
 
-	return approval.Gate(mode, stage, opts.Out, opts.In)
+	if mode == approval.ModeHard {
+		artifactFile := state.ArtifactFile(stage)
+		if artifactFile != "" {
+			return approval.BrowserGate(filepath.Join(plansDir, artifactFile), stage.String(), opts.Out)
+		}
+	}
+
+	return approval.Gate(mode, stage.String(), opts.Out, opts.In)
 }

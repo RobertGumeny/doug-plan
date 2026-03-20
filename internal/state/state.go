@@ -96,6 +96,17 @@ func ClearAllArtifacts(plansDir string) error {
 	return ClearArtifactsFromStage(plansDir, StageDiscovery)
 }
 
+// ArtifactFile returns the artifact filename (e.g. "VISION.md") for the given
+// stage, or "" if the stage is Complete or unknown.
+func ArtifactFile(stage Stage) string {
+	for _, step := range pipeline {
+		if step.stage == stage {
+			return step.artifact
+		}
+	}
+	return ""
+}
+
 // InferStage inspects plansDir and returns the first stage whose artifact is
 // absent. If all artifacts are present, StageComplete is returned.
 // No state file is read or written.

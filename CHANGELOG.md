@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- feat: EPIC-5-001 — embedded HTTP server with dynamic port, embed.FS bundle, browser gate
 - feat: EPIC-4-005 — add Handoff ACTIVE_STEP.md template and full-pipeline e2e test
 - feat: add greenfield detection and manifest.yaml emission to Handoff skill
 - feat: implement Handoff skill for converting scoped epics to PRD.md and tasks.yaml
