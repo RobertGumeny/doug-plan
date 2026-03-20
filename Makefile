@@ -1,4 +1,4 @@
-.PHONY: build test lint clean
+.PHONY: build build-ui test lint clean
 
 TMP_CACHE_ROOT ?= /tmp/doug-cache
 GOCACHE_DIR := $(TMP_CACHE_ROOT)/go-build
@@ -9,7 +9,11 @@ GOFMT_CHECK = files="$$(gofmt -l .)"; \
 		exit 1; \
 	fi
 
-build:
+build-ui:
+	npm install --prefix ui
+	node ui/build.js
+
+build: build-ui
 	go build -o doug-plan .
 
 test:
