@@ -15,10 +15,19 @@ Invoke `/definition` to define the next unmaterialized epic from `.doug/plan/ROA
 - `# Definition`
 - `## Defined Epics`
 
+The per-epic DEFINITION.md schema is the authoritative source for downstream rendering. Each section maps directly to the output PRD.md (Overview → Overview, Scope → Scope, Goals → Goals, Non-Goals → Non-Goals, Background → Background, Success Criteria → Success Criteria, Deliverables → Deliverables) and the Tasks section maps to tasks.yaml.
+
 **Per-epic artifact**: `.doug/plan/epics/<EPIC-ID>/DEFINITION.md` — write one file per epic as it is defined. Required headings:
-- `# Epic Definition: <EPIC-ID> — <Epic Name>`
+- YAML frontmatter block: `id: "<EPIC-ID>"` and `name: "<Epic Name>"`
+- `# Definition`
 - `## Overview`
-- `## Tasks` (with `### <EPIC-ID>-NNN: <Task Name>` subsections)
+- `## Scope` (with `### In-Scope` and `### Out-of-Scope` subsections)
+- `## Goals`
+- `## Non-Goals`
+- `## Background`
+- `## Success Criteria`
+- `## Deliverables`
+- `## Tasks` (with `### <EPIC-ID>-NNN: <Task Name>` subsections, each including `**Type**`, `**Description**`, and `**Acceptance Criteria**` bullet list)
 
 **Supporting files to read**:
 - `.doug/plan/VISION.md` — required; provides project context

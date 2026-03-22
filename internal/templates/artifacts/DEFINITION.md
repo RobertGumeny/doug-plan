@@ -1,3 +1,26 @@
+---
+id: ""
+name: ""
+---
+
 # Definition
 
-## Defined Epics
+## Overview
+
+## Scope
+
+### In-Scope
+
+### Out-of-Scope
+
+## Goals
+
+## Non-Goals
+
+## Background
+
+## Success Criteria
+
+## Deliverables
+
+## Tasks
