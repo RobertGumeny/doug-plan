@@ -56,7 +56,7 @@ func main() {
 			fmt.Fprintln(os.Stderr, "fakeagent: write ROADMAP.md:", err)
 			os.Exit(1)
 		}
-	case strings.Contains(content, "**Stage**: Scoping"):
+	case strings.Contains(content, "**Stage**: Definition"):
 		roadmapData, err := os.ReadFile(filepath.Join(planDir, "ROADMAP.md"))
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "fakeagent: read ROADMAP.md:", err)
@@ -67,18 +67,18 @@ func main() {
 			fmt.Fprintln(os.Stderr, "fakeagent: no epic IDs found in ROADMAP.md")
 			os.Exit(1)
 		}
-		// Find the next epic that has not yet been scoped.
+		// Find the next epic that has not yet been defined.
 		var nextEpic string
 		for _, id := range epicIDs {
-			if _, err := os.Stat(filepath.Join(planDir, "epics", id, "SCOPED.md")); os.IsNotExist(err) {
+			if _, err := os.Stat(filepath.Join(planDir, "epics", id, "DEFINITION.md")); os.IsNotExist(err) {
 				nextEpic = id
 				break
 			}
 		}
 		if nextEpic == "" {
-			// All epics are already scoped — write the completion marker.
-			if err := os.WriteFile(filepath.Join(planDir, "SCOPED.md"), []byte(fakeScopedComplete), 0o644); err != nil {
-				fmt.Fprintln(os.Stderr, "fakeagent: write SCOPED.md:", err)
+			// All epics are already defined — write the completion marker.
+			if err := os.WriteFile(filepath.Join(planDir, "DEFINITION.md"), []byte(fakeDefinitionComplete), 0o644); err != nil {
+				fmt.Fprintln(os.Stderr, "fakeagent: write DEFINITION.md:", err)
 				os.Exit(1)
 			}
 		} else {
@@ -87,22 +87,22 @@ func main() {
 				fmt.Fprintln(os.Stderr, "fakeagent: mkdir epics dir:", err)
 				os.Exit(1)
 			}
-			scopedContent := fmt.Sprintf("# Scoped: %s\n", nextEpic)
-			if err := os.WriteFile(filepath.Join(epicDir, "SCOPED.md"), []byte(scopedContent), 0o644); err != nil {
-				fmt.Fprintln(os.Stderr, "fakeagent: write per-epic SCOPED.md:", err)
+			definitionContent := fmt.Sprintf("# Definition: %s\n", nextEpic)
+			if err := os.WriteFile(filepath.Join(epicDir, "DEFINITION.md"), []byte(definitionContent), 0o644); err != nil {
+				fmt.Fprintln(os.Stderr, "fakeagent: write per-epic DEFINITION.md:", err)
 				os.Exit(1)
 			}
-			// Check whether all epics are now scoped.
-			allScoped := true
+			// Check whether all epics are now defined.
+			allDefined := true
 			for _, id := range epicIDs {
-				if _, err := os.Stat(filepath.Join(planDir, "epics", id, "SCOPED.md")); os.IsNotExist(err) {
-					allScoped = false
+				if _, err := os.Stat(filepath.Join(planDir, "epics", id, "DEFINITION.md")); os.IsNotExist(err) {
+					allDefined = false
 					break
 				}
 			}
-			if allScoped {
-				if err := os.WriteFile(filepath.Join(planDir, "SCOPED.md"), []byte(fakeScopedComplete), 0o644); err != nil {
-					fmt.Fprintln(os.Stderr, "fakeagent: write SCOPED.md:", err)
+			if allDefined {
+				if err := os.WriteFile(filepath.Join(planDir, "DEFINITION.md"), []byte(fakeDefinitionComplete), 0o644); err != nil {
+					fmt.Fprintln(os.Stderr, "fakeagent: write DEFINITION.md:", err)
 					os.Exit(1)
 				}
 			} else {
@@ -120,19 +120,19 @@ func main() {
 			fmt.Fprintln(os.Stderr, "fakeagent: no epic IDs found in ROADMAP.md")
 			os.Exit(1)
 		}
-		// Find the next scoped epic that has not yet been handed off.
+		// Find the next defined epic that has not yet been handed off.
 		var nextEpic string
 		for _, id := range epicIDs {
-			_, scopedErr := os.Stat(filepath.Join(planDir, "epics", id, "SCOPED.md"))
+			_, definitionErr := os.Stat(filepath.Join(planDir, "epics", id, "DEFINITION.md"))
 			_, prdErr := os.Stat(filepath.Join(planDir, "epics", id, "PRD.md"))
 			_, tasksErr := os.Stat(filepath.Join(planDir, "epics", id, "tasks.yaml"))
-			if scopedErr == nil && (os.IsNotExist(prdErr) || os.IsNotExist(tasksErr)) {
+			if definitionErr == nil && (os.IsNotExist(prdErr) || os.IsNotExist(tasksErr)) {
 				nextEpic = id
 				break
 			}
 		}
 		if nextEpic == "" {
-			// All scoped epics already handed off — write the global completion marker.
+			// All defined epics already handed off — write the global completion marker.
 			if err := os.WriteFile(filepath.Join(planDir, "PRD.md"), []byte(fakePRDComplete), 0o644); err != nil {
 				fmt.Fprintln(os.Stderr, "fakeagent: write PRD.md:", err)
 				os.Exit(1)
@@ -153,12 +153,12 @@ func main() {
 				fmt.Fprintln(os.Stderr, "fakeagent: write per-epic tasks.yaml:", err)
 				os.Exit(1)
 			}
-			// Check whether all scoped epics are now handed off.
+			// Check whether all defined epics are now handed off.
 			allHandedOff := true
 			for _, id := range epicIDs {
-				_, scopedErr := os.Stat(filepath.Join(planDir, "epics", id, "SCOPED.md"))
-				if os.IsNotExist(scopedErr) {
-					continue // not scoped yet — skip
+				_, definitionErr := os.Stat(filepath.Join(planDir, "epics", id, "DEFINITION.md"))
+				if os.IsNotExist(definitionErr) {
+					continue // not defined yet — skip
 				}
 				_, prdErr := os.Stat(filepath.Join(planDir, "epics", id, "PRD.md"))
 				_, tasksErr := os.Stat(filepath.Join(planDir, "epics", id, "tasks.yaml"))
@@ -190,12 +190,12 @@ func main() {
 
 const fakePRDComplete = `# Handoff Complete
 
-All scoped epics have been handed off. Per-epic PRD.md and tasks.yaml files are in ` + "`.doug/plan/epics/`." + `
+All defined epics have been handed off. Per-epic PRD.md and tasks.yaml files are in ` + "`.doug/plan/epics/`." + `
 `
 
-const fakeScopedComplete = `# Scoping Complete
+const fakeDefinitionComplete = `# Definition Complete
 
-All epics from ROADMAP.md have been scoped. Scoped definitions are in ` + "`.doug/plan/epics/`." + `
+All epics from ROADMAP.md have been defined. Epic definitions are in ` + "`.doug/plan/epics/`." + `
 `
 
 const fakeVision = `# Vision

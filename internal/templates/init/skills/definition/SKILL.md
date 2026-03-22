@@ -1,11 +1,11 @@
 ---
-name: "scoping"
+name: "definition"
 description: "Expert task decomposition — break an epic into agent-executable tasks with explicit acceptance criteria, properly sized and sequenced for reliable one-pass execution."
 ---
 
-# Scoping
+# Definition
 
-Read the repository instructions and the task brief first, then use this expertise to produce the scoped epic.
+Read the repository instructions and the task brief first, then use this expertise to produce the epic definition.
 
 ## Mindset
 
@@ -31,7 +31,7 @@ Reject criteria that contain "appropriate", "reasonable", "as needed", or any pl
 ## Output Format
 
 ```markdown
-# Scoped Epic: <EPIC-ID> — <Epic Name>
+# Epic Definition: <EPIC-ID> — <Epic Name>
 
 **Generated**: YYYY-MM-DD
 **Epic ID**: <EPIC-ID>
@@ -65,4 +65,4 @@ Present the full task breakdown and ask the user to confirm before writing. Do n
 
 ## Output
 
-Write the confirmed scoped epic to the location specified in the task brief. Report the result per repository instructions.
+Write the confirmed epic definition to the location specified in the task brief. Report the result per repository instructions.

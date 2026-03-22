@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ApproveButton from '../ApproveButton';
 
-// Parse SCOPED.md into preamble + structured task list.
+// Parse DEFINITION.md into preamble + structured task list.
 // Tasks begin after the "## Tasks" heading and are delimited by "### " lines.
 function parseTasks(markdown) {
   const lines = markdown.split('\n');
@@ -82,7 +82,7 @@ function serializeTasks(preamble, tasks) {
   return preambleStr + '\n\n' + taskParts.join('\n\n') + '\n';
 }
 
-export default function ScopingView({ content, onApprove, status }) {
+export default function DefinitionView({ content, onApprove, status }) {
   const parsed = parseTasks(content);
   const [tasks, setTasks] = useState(parsed.tasks);
   const preamble = parsed.preamble;

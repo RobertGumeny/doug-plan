@@ -13,7 +13,7 @@ type Stage int
 const (
 	StageDiscovery   Stage = iota // produces VISION.md
 	StageRoadmapping              // produces ROADMAP.md
-	StageScoping                  // produces SCOPED.md
+	StageDefinition               // produces DEFINITION.md
 	StagePRD                      // produces PRD.md
 	StageTasks                    // produces TASKS.md
 	StageComplete
@@ -26,8 +26,8 @@ func (s Stage) String() string {
 		return "Discovery"
 	case StageRoadmapping:
 		return "Roadmapping"
-	case StageScoping:
-		return "Scoping"
+	case StageDefinition:
+		return "Definition"
 	case StagePRD:
 		return "PRD"
 	case StageTasks:
@@ -51,7 +51,7 @@ type pipelineStep struct {
 var pipeline = []pipelineStep{
 	{StageDiscovery, "VISION.md"},
 	{StageRoadmapping, "ROADMAP.md"},
-	{StageScoping, "SCOPED.md"},
+	{StageDefinition, "DEFINITION.md"},
 	{StagePRD, "PRD.md"},
 	{StageTasks, "TASKS.md"},
 }
@@ -64,14 +64,14 @@ func StageFromString(name string) (Stage, error) {
 		return StageDiscovery, nil
 	case "roadmapping":
 		return StageRoadmapping, nil
-	case "scoping":
-		return StageScoping, nil
+	case "definition":
+		return StageDefinition, nil
 	case "prd":
 		return StagePRD, nil
 	case "tasks":
 		return StageTasks, nil
 	default:
-		return StageDiscovery, fmt.Errorf("unknown stage %q: must be one of Discovery, Roadmapping, Scoping, PRD, Tasks", name)
+		return StageDiscovery, fmt.Errorf("unknown stage %q: must be one of Discovery, Roadmapping, Definition, PRD, Tasks", name)
 	}
 }
 

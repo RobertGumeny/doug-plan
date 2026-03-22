@@ -19,15 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - feat: POST-back-to-disk approval flow and hard mode browser gate verified; pipeline blocks until browser Approve; content written atomically to disk before pipeline advances; browser auto-opens with terminal URL fallback
-- feat: scoped epic definition view with guided per-task fields; PRD/tasks.yaml split layout view
+- feat: epic definition view with guided per-task fields; PRD/tasks.yaml split layout view
 - feat: VISION.md and ROADMAP.md form views verified complete
 - feat: build and embed compiled React bundle as self-contained HTML
 - feat: embedded HTTP server with dynamic port, embed.FS bundle, browser gate
 - feat: add Handoff ACTIVE_STEP.md template and full-pipeline e2e test
 - feat: add greenfield detection and manifest.yaml emission to Handoff skill
-- feat: implement Handoff skill for converting scoped epics to PRD.md and tasks.yaml
-- feat: implement re-entry at Scoping for subsequent epics
-- feat: implement Scoping skill and add StageScoping to pipeline
+- feat: implement Handoff skill for converting defined epics to PRD.md and tasks.yaml
+- feat: implement re-entry at Definition for subsequent epics
+- feat: implement Definition skill and add StageDefinition to pipeline
 - feat: end-to-end pipeline validation through Roadmapping output; add orchestrator e2e test with fakeagent helper, ROADMAP.md format validator, and regression test for inline section reference bug
 - feat: add ACTIVE_STEP.md templates for Discovery and Roadmapping stages
 - feat: add roadmapping skill template for VISION.md → ROADMAP.md workflow in hybrid Markdown + YAML frontmatter format
@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - docs: add Browser UI KB article and update orchestrator/go KB articles for EPIC-5
-- docs: update KB for EPIC-4 — add Scoping/PRD stages and scoping/handoff skills
+- docs: update KB for EPIC-4 — add Definition/PRD stages and definition/handoff skills
 - docs(kb): update KB articles for EPIC-3 — document discovery and roadmapping skills, stage-specific ACTIVE_STEP.md templates, and ParseResult anchor fix
 
 ### Fixed

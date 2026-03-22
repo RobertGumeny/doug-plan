@@ -127,7 +127,7 @@ func TestEndToEnd_DiscoveryToRoadmapping(t *testing.T) {
 	}
 }
 
-func TestEndToEnd_ScopingReentry(t *testing.T) {
+func TestEndToEnd_DefinitionReentry(t *testing.T) {
 	if fakeAgentExe == "" {
 		t.Skip("fake agent binary not built")
 	}
@@ -166,8 +166,8 @@ func TestEndToEnd_ScopingReentry(t *testing.T) {
 		}
 		output := out.String()
 
-		if !strings.Contains(output, "Pipeline entry point: Scoping") {
-			t.Errorf("run %d: expected Scoping entry point, got:\n%s", i+1, output)
+		if !strings.Contains(output, "Pipeline entry point: Definition") {
+			t.Errorf("run %d: expected Definition entry point, got:\n%s", i+1, output)
 		}
 		if strings.Contains(output, "Pipeline entry point: Discovery") {
 			t.Errorf("run %d: Discovery was unexpectedly re-run:\n%s", i+1, output)
@@ -177,14 +177,14 @@ func TestEndToEnd_ScopingReentry(t *testing.T) {
 		}
 	}
 
-	if _, err := os.Stat(filepath.Join(planDir, "SCOPED.md")); os.IsNotExist(err) {
-		t.Fatal("SCOPED.md not created after all epics scoped")
+	if _, err := os.Stat(filepath.Join(planDir, "DEFINITION.md")); os.IsNotExist(err) {
+		t.Fatal("DEFINITION.md not created after all epics defined")
 	}
 
 	for _, id := range []string{"EPIC-1", "EPIC-2", "EPIC-3", "EPIC-4"} {
-		path := filepath.Join(planDir, "epics", id, "SCOPED.md")
+		path := filepath.Join(planDir, "epics", id, "DEFINITION.md")
 		if _, err := os.Stat(path); os.IsNotExist(err) {
-			t.Errorf("per-epic SCOPED.md missing for %s", id)
+			t.Errorf("per-epic DEFINITION.md missing for %s", id)
 		}
 	}
 }
@@ -229,15 +229,15 @@ func TestEndToEnd_FullPipeline(t *testing.T) {
 	const numEpics = 4
 	for i := range numEpics {
 		if err := orchestrator.Run(opts); err != nil {
-			t.Fatalf("Scoping run %d failed: %v", i+1, err)
+			t.Fatalf("Definition run %d failed: %v", i+1, err)
 		}
 	}
-	if _, err := os.Stat(filepath.Join(planDir, "SCOPED.md")); os.IsNotExist(err) {
-		t.Fatal("SCOPED.md not created after all Scoping runs")
+	if _, err := os.Stat(filepath.Join(planDir, "DEFINITION.md")); os.IsNotExist(err) {
+		t.Fatal("DEFINITION.md not created after all Definition runs")
 	}
 	for _, id := range []string{"EPIC-1", "EPIC-2", "EPIC-3", "EPIC-4"} {
-		if _, err := os.Stat(filepath.Join(planDir, "epics", id, "SCOPED.md")); os.IsNotExist(err) {
-			t.Errorf("per-epic SCOPED.md missing for %s", id)
+		if _, err := os.Stat(filepath.Join(planDir, "epics", id, "DEFINITION.md")); os.IsNotExist(err) {
+			t.Errorf("per-epic DEFINITION.md missing for %s", id)
 		}
 	}
 

@@ -82,10 +82,10 @@ func TestWriteStep_Roadmapping_TemplateContent(t *testing.T) {
 	}
 }
 
-func TestWriteStep_Scoping_TemplateContent(t *testing.T) {
+func TestWriteStep_Definition_TemplateContent(t *testing.T) {
 	root := t.TempDir()
 
-	if err := WriteStep(root, state.StageScoping); err != nil {
+	if err := WriteStep(root, state.StageDefinition); err != nil {
 		t.Fatalf("WriteStep: %v", err)
 	}
 
@@ -96,15 +96,15 @@ func TestWriteStep_Scoping_TemplateContent(t *testing.T) {
 
 	content := string(data)
 	checks := []string{
-		"SCOPED.md",     // artifact path
-		"/scoping",      // skill instruction
+		"DEFINITION.md", // artifact path
+		"/definition",   // skill instruction
 		"ROADMAP.md",    // prerequisite
 		"VISION.md",     // prerequisite
 		"outcome: \"\"", // result stub
 	}
 	for _, want := range checks {
 		if !strings.Contains(content, want) {
-			t.Errorf("Scoping ACTIVE_STEP.md missing %q; got:\n%s", want, content)
+			t.Errorf("Definition ACTIVE_STEP.md missing %q; got:\n%s", want, content)
 		}
 	}
 }
@@ -125,7 +125,7 @@ func TestWriteStep_PRD_TemplateContent(t *testing.T) {
 	checks := []string{
 		"PRD.md",        // artifact path
 		"/handoff",      // skill instruction
-		"SCOPED.md",     // prerequisite
+		"DEFINITION.md", // prerequisite
 		"outcome: \"\"", // result stub
 	}
 	for _, want := range checks {

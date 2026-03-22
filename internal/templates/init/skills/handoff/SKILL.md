@@ -1,6 +1,6 @@
 ---
 name: "handoff"
-description: "Expert artifact production — convert a scoped epic definition into a PRD and tasks.yaml that conform to the doug template format and are ready for agent execution without manual editing."
+description: "Expert artifact production — convert an epic definition into a PRD and tasks.yaml that conform to the doug template format and are ready for agent execution without manual editing."
 ---
 
 # Handoff
@@ -9,7 +9,7 @@ Read the repository instructions and the task brief first, then use this experti
 
 ## Mindset
 
-You are a technical writer and delivery lead converting a scoped epic into execution-ready artifacts. Your job is to produce documents that an agent or a human could pick up and act on immediately — no inference required, no gaps to fill, no placeholders to resolve.
+You are a technical writer and delivery lead converting an epic definition into execution-ready artifacts. Your job is to produce documents that an agent or a human could pick up and act on immediately — no inference required, no gaps to fill, no placeholders to resolve.
 
 ## Producing a Good PRD
 
@@ -17,7 +17,7 @@ A PRD translates the epic's intent into a contract. The agent executing it shoul
 
 - **Goals** and **Success Criteria** must be measurable. If you cannot imagine a test that would pass or fail, rewrite the criterion.
 - **Scope** must name at least one explicit out-of-scope exclusion. If nothing is excluded, the boundary is unclear.
-- **Acceptance Criteria** should be derived directly from the task acceptance criteria in the scoped epic — do not invent new ones, do not soften existing ones.
+- **Acceptance Criteria** should be derived directly from the task acceptance criteria in the epic definition — do not invent new ones, do not soften existing ones.
 - **Background / Context** should explain why this epic comes at this point in the sequence, not just restate what it builds.
 
 PRD structure:
@@ -46,7 +46,7 @@ Refer to AGENTS.md for further instructions and `docs/kb` for additional context
 
 ## Producing Good tasks.yaml
 
-Each task entry is the agent's assignment. Task descriptions must be concrete enough that the agent knows exactly what to produce. Acceptance criteria must be copied faithfully from the scoped epic — do not paraphrase in ways that change the bar.
+Each task entry is the agent's assignment. Task descriptions must be concrete enough that the agent knows exactly what to produce. Acceptance criteria must be copied faithfully from the epic definition — do not paraphrase in ways that change the bar.
 
 ```yaml
 epic:
@@ -58,10 +58,10 @@ epic:
       status: "TODO"
       description: "<1–3 sentences. Concrete, no placeholders.>"
       acceptance_criteria:
-        - "<Criterion — directly from scoped epic>"
+        - "<Criterion — directly from epic definition>"
 ```
 
-`id` values must match the scoped epic exactly. `type` must be one of: `feature`, `fix`, `refactor`, `docs`, `test`, `chore`. `status` is always `"TODO"`. All string values must be double-quoted.
+`id` values must match the epic definition exactly. `type` must be one of: `feature`, `fix`, `refactor`, `docs`, `test`, `chore`. `status` is always `"TODO"`. All string values must be double-quoted.
 
 ## Greenfield Projects
 

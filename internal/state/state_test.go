@@ -23,23 +23,23 @@ func TestInferStage(t *testing.T) {
 			want:      StageRoadmapping,
 		},
 		{
-			name:      "VISION.md + ROADMAP.md → Scoping",
+			name:      "VISION.md + ROADMAP.md → Definition",
 			artifacts: []string{"VISION.md", "ROADMAP.md"},
-			want:      StageScoping,
+			want:      StageDefinition,
 		},
 		{
-			name:      "VISION.md + ROADMAP.md + SCOPED.md → PRD",
-			artifacts: []string{"VISION.md", "ROADMAP.md", "SCOPED.md"},
+			name:      "VISION.md + ROADMAP.md + DEFINITION.md → PRD",
+			artifacts: []string{"VISION.md", "ROADMAP.md", "DEFINITION.md"},
 			want:      StagePRD,
 		},
 		{
-			name:      "VISION.md + ROADMAP.md + SCOPED.md + PRD.md → Tasks",
-			artifacts: []string{"VISION.md", "ROADMAP.md", "SCOPED.md", "PRD.md"},
+			name:      "VISION.md + ROADMAP.md + DEFINITION.md + PRD.md → Tasks",
+			artifacts: []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md"},
 			want:      StageTasks,
 		},
 		{
 			name:      "all artifacts → Complete",
-			artifacts: []string{"VISION.md", "ROADMAP.md", "SCOPED.md", "PRD.md", "TASKS.md"},
+			artifacts: []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"},
 			want:      StageComplete,
 		},
 		{
@@ -80,8 +80,8 @@ func TestStageFromString(t *testing.T) {
 		{"DISCOVERY", StageDiscovery, false},
 		{"Roadmapping", StageRoadmapping, false},
 		{"roadmapping", StageRoadmapping, false},
-		{"Scoping", StageScoping, false},
-		{"scoping", StageScoping, false},
+		{"Definition", StageDefinition, false},
+		{"definition", StageDefinition, false},
 		{"PRD", StagePRD, false},
 		{"prd", StagePRD, false},
 		{"Tasks", StageTasks, false},
@@ -113,30 +113,30 @@ func TestClearArtifactsFromStage(t *testing.T) {
 	}{
 		{
 			name:        "clear from Discovery removes all",
-			present:     []string{"VISION.md", "ROADMAP.md", "SCOPED.md", "PRD.md", "TASKS.md"},
+			present:     []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"},
 			clearFrom:   StageDiscovery,
 			wantPresent: nil,
-			wantAbsent:  []string{"VISION.md", "ROADMAP.md", "SCOPED.md", "PRD.md", "TASKS.md"},
+			wantAbsent:  []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"},
 		},
 		{
-			name:        "clear from Scoping keeps earlier artifacts",
-			present:     []string{"VISION.md", "ROADMAP.md", "SCOPED.md", "PRD.md", "TASKS.md"},
-			clearFrom:   StageScoping,
+			name:        "clear from Definition keeps earlier artifacts",
+			present:     []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"},
+			clearFrom:   StageDefinition,
 			wantPresent: []string{"VISION.md", "ROADMAP.md"},
-			wantAbsent:  []string{"SCOPED.md", "PRD.md", "TASKS.md"},
+			wantAbsent:  []string{"DEFINITION.md", "PRD.md", "TASKS.md"},
 		},
 		{
 			name:        "clear from PRD keeps earlier artifacts",
-			present:     []string{"VISION.md", "ROADMAP.md", "SCOPED.md", "PRD.md", "TASKS.md"},
+			present:     []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"},
 			clearFrom:   StagePRD,
-			wantPresent: []string{"VISION.md", "ROADMAP.md", "SCOPED.md"},
+			wantPresent: []string{"VISION.md", "ROADMAP.md", "DEFINITION.md"},
 			wantAbsent:  []string{"PRD.md", "TASKS.md"},
 		},
 		{
 			name:        "clear from Tasks removes only TASKS.md",
-			present:     []string{"VISION.md", "ROADMAP.md", "SCOPED.md", "PRD.md", "TASKS.md"},
+			present:     []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"},
 			clearFrom:   StageTasks,
-			wantPresent: []string{"VISION.md", "ROADMAP.md", "SCOPED.md", "PRD.md"},
+			wantPresent: []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md"},
 			wantAbsent:  []string{"TASKS.md"},
 		},
 		{
@@ -151,7 +151,7 @@ func TestClearArtifactsFromStage(t *testing.T) {
 			present:     nil,
 			clearFrom:   StageDiscovery,
 			wantPresent: nil,
-			wantAbsent:  []string{"VISION.md", "ROADMAP.md", "SCOPED.md", "PRD.md", "TASKS.md"},
+			wantAbsent:  []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"},
 		},
 	}
 	for _, tt := range tests {
@@ -181,7 +181,7 @@ func TestClearArtifactsFromStage(t *testing.T) {
 
 func TestClearAllArtifacts(t *testing.T) {
 	dir := t.TempDir()
-	for _, a := range []string{"VISION.md", "ROADMAP.md", "SCOPED.md", "PRD.md", "TASKS.md"} {
+	for _, a := range []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"} {
 		if err := os.WriteFile(filepath.Join(dir, a), []byte("stub"), 0644); err != nil {
 			t.Fatalf("setup: %v", err)
 		}
@@ -189,7 +189,7 @@ func TestClearAllArtifacts(t *testing.T) {
 	if err := ClearAllArtifacts(dir); err != nil {
 		t.Fatalf("ClearAllArtifacts: %v", err)
 	}
-	for _, a := range []string{"VISION.md", "ROADMAP.md", "SCOPED.md", "PRD.md", "TASKS.md"} {
+	for _, a := range []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"} {
 		if _, err := os.Stat(filepath.Join(dir, a)); !os.IsNotExist(err) {
 			t.Errorf("expected %s to be absent after ClearAllArtifacts", a)
 		}
@@ -203,7 +203,7 @@ func TestStageString(t *testing.T) {
 	}{
 		{StageDiscovery, "Discovery"},
 		{StageRoadmapping, "Roadmapping"},
-		{StageScoping, "Scoping"},
+		{StageDefinition, "Definition"},
 		{StagePRD, "PRD"},
 		{StageTasks, "Tasks"},
 		{StageComplete, "Complete"},

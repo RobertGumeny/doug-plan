@@ -2,7 +2,7 @@
 title: Skill System
 updated: 2026-03-19
 category: Architecture
-tags: [skills, scaffold, agents, claude, codex, gemini, discovery, roadmapping, scoping, handoff]
+tags: [skills, scaffold, agents, claude, codex, gemini, discovery, roadmapping, definition, handoff]
 related_articles:
   - docs/kb/architecture/orchestrator.md
 ---
@@ -50,7 +50,7 @@ internal/templates/init/skills/
 │   └── SKILL.md       ← template
 ├── roadmapping/
 │   └── SKILL.md       ← template
-└── scoping/
+└── definition/
     └── SKILL.md       ← template
 ```
 
@@ -61,12 +61,12 @@ internal/templates/init/skills/
 .claude/skills/handoff/SKILL.md
 .claude/skills/research/SKILL.md
 .claude/skills/roadmapping/SKILL.md
-.claude/skills/scoping/SKILL.md
+.claude/skills/definition/SKILL.md
 .codex/skills/discovery/SKILL.md
 .codex/skills/handoff/SKILL.md
 .codex/skills/research/SKILL.md
 .codex/skills/roadmapping/SKILL.md
-.codex/skills/scoping/SKILL.md
+.codex/skills/definition/SKILL.md
 ```
 
 The mapping is handled by `selectedSkillDestinations` in `internal/scaffold/scaffold.go`. Agent directories:
@@ -109,7 +109,7 @@ When building a new skill, start by copying `research/SKILL.md` and adapting the
 
 ---
 
-## Planning Skills: `discovery`, `roadmapping`, `scoping`, and `handoff`
+## Planning Skills: `discovery`, `roadmapping`, `definition`, and `handoff`
 
 These four skills implement the first four stages of the `doug-plan` pipeline. All can be invoked standalone or as part of a pipeline run.
 
@@ -160,32 +160,32 @@ One paragraph description.
 
 Each epic block must have `id`, `name`, `sequence`, and `status` fields. `status` is always `planned` for newly produced roadmaps.
 
-### `scoping`
+### `definition`
 
-Reads `VISION.md` and `ROADMAP.md`, identifies the next unscoped epic, and produces a task breakdown with acceptance criteria.
+Reads `VISION.md` and `ROADMAP.md`, identifies the next undefined epic, and produces a task breakdown with acceptance criteria.
 
 **Phases**: Ingest Context → Identify Next Epic → Scope the Target Epic → Draft and Review → Write Output
 
 - Phase 1 reads `.doug/plan/ACTIVE_STEP.md` (if present), locates `VISION.md` and `ROADMAP.md`.
-- Phase 2 finds the first epic in ROADMAP.md that does not have `.doug/plan/epics/<EPIC-ID>/SCOPED.md`.
+- Phase 2 finds the first epic in ROADMAP.md that does not have `.doug/plan/epics/<EPIC-ID>/DEFINITION.md`.
 - Phase 3 produces 3–8 tasks per epic, each with an ID (`<EPIC-ID>-NNN`), type, description, and 2–5 measurable acceptance criteria.
-- Phase 5 writes `.doug/plan/epics/<EPIC-ID>/SCOPED.md`. If all epics are now scoped, it also writes `.doug/plan/SCOPED.md` and sets `outcome` to `SUCCESS`. If more epics remain, it sets `outcome` to `RETRY` so the orchestrator re-invokes the skill for the next epic.
+- Phase 5 writes `.doug/plan/epics/<EPIC-ID>/DEFINITION.md`. If all epics are now defined, it also writes `.doug/plan/DEFINITION.md` and sets `outcome` to `SUCCESS`. If more epics remain, it sets `outcome` to `RETRY` so the orchestrator re-invokes the skill for the next epic.
 
-**Output**: Per-epic `.doug/plan/epics/<EPIC-ID>/SCOPED.md` files, plus `.doug/plan/SCOPED.md` when all epics are scoped.
+**Output**: Per-epic `.doug/plan/epics/<EPIC-ID>/DEFINITION.md` files, plus `.doug/plan/DEFINITION.md` when all epics are defined.
 
 ### `handoff`
 
-Reads a scoped epic definition and converts it into `PRD.md` and `tasks.yaml` conforming to the `doug` template format.
+Reads an epic definition and converts it into `PRD.md` and `tasks.yaml` conforming to the `doug` template format.
 
 **Phases**: Ingest Context → Identify Next Epic to Hand Off → Convert to PRD.md and tasks.yaml → Draft and Review → Write Output
 
 - Phase 1 reads `.doug/plan/ACTIVE_STEP.md` (if present), locates `VISION.md` and `ROADMAP.md`, and determines whether the project is **greenfield** (no references to existing codebase, legacy system, migration, or rewrite in `VISION.md`).
-- Phase 2 finds the first epic that has `SCOPED.md` but is missing either `PRD.md` or `tasks.yaml`.
-- Phase 3 converts `SCOPED.md` into a `PRD.md` (epic overview, goals, non-goals, background, success criteria, deliverables, acceptance criteria) and a `tasks.yaml` (task list with id, type, status, description, acceptance_criteria).
-- Phase 5 writes both files to `.doug/plan/epics/<EPIC-ID>/`. When all scoped epics are handed off, it writes `.doug/plan/PRD.md` and sets `outcome` to `SUCCESS`. If more remain, it sets `outcome` to `RETRY`.
+- Phase 2 finds the first epic that has `DEFINITION.md` but is missing either `PRD.md` or `tasks.yaml`.
+- Phase 3 converts `DEFINITION.md` into a `PRD.md` (epic overview, goals, non-goals, background, success criteria, deliverables, acceptance criteria) and a `tasks.yaml` (task list with id, type, status, description, acceptance_criteria).
+- Phase 5 writes both files to `.doug/plan/epics/<EPIC-ID>/`. When all defined epics are handed off, it writes `.doug/plan/PRD.md` and sets `outcome` to `SUCCESS`. If more remain, it sets `outcome` to `RETRY`.
 - **Greenfield manifest**: On the first successful handoff for a greenfield project, emits `.doug/plan/manifest.yaml` with fields: `project`, `generated`, `greenfield`, `stack`, `build_system`, `dependencies`.
 
-**Output**: Per-epic `.doug/plan/epics/<EPIC-ID>/PRD.md` and `tasks.yaml`, plus `.doug/plan/PRD.md` when all epics are handed off. Optionally `.doug/plan/manifest.yaml` for greenfield projects.
+**Output**: Per-epic `.doug/plan/epics/<EPIC-ID>/PRD.md` and `tasks.yaml`, plus `.doug/plan/PRD.md` when all defined epics are handed off. Optionally `.doug/plan/manifest.yaml` for greenfield projects.
 
 ---
 

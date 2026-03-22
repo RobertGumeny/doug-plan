@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import VisionView from './views/VisionView';
 import RoadmapView from './views/RoadmapView';
-import ScopingView from './views/ScopingView';
+import DefinitionView from './views/DefinitionView';
 import PRDView from './views/PRDView';
 import TasksView from './views/TasksView';
 
 const VIEWS = {
   Discovery: VisionView,
   Roadmapping: RoadmapView,
-  Scoping: ScopingView,
+  Definition: DefinitionView,
   PRD: PRDView,
   Tasks: TasksView,
 };

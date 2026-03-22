@@ -92,7 +92,7 @@ Views are rendered based on the `stage` field returned by `GET /artifact`:
 | ----- | ---- | ----------- |
 | `Discovery` | `VisionView` | Single large textarea for `VISION.md` |
 | `Roadmapping` | `RoadmapView` | Epic card list with editable title, description, reordering |
-| `Scoping` | `ScopingView` | Task list with guided fields per task |
+| `Definition` | `DefinitionView` | Task list with guided fields per task |
 | `PRD` | `PRDView` | Split prose textarea and structured task list |
 | `Tasks` | `TasksView` | Structured task review |
 
