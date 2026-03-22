@@ -15,7 +15,7 @@ const (
 	StageRoadmapping              // produces ROADMAP.md
 	StageDefinition               // produces DEFINITION.md
 	StagePRD                      // produces PRD.md
-	StageTasks                    // produces TASKS.md
+	StageTasks                    // produces tasks.yaml
 	StageComplete
 )
 
@@ -53,7 +53,7 @@ var pipeline = []pipelineStep{
 	{StageRoadmapping, "ROADMAP.md"},
 	{StageDefinition, "DEFINITION.md"},
 	{StagePRD, "PRD.md"},
-	{StageTasks, "TASKS.md"},
+	{StageTasks, "tasks.yaml"},
 }
 
 // StageFromString parses a stage name (case-insensitive) and returns the
@@ -108,17 +108,26 @@ func ArtifactFile(stage Stage) string {
 }
 
 // InferStage inspects plansDir and returns the first stage whose artifact is
-// absent. If all artifacts are present, StageComplete is returned.
-// No state file is read or written.
+// absent or invalid. If all artifacts are present and valid, StageComplete is
+// returned. No state file is read or written.
+//
+// An artifact is considered invalid when its content validator (see validate.go)
+// returns a non-nil error. This treats an unfilled shell the same as a missing
+// file so the pipeline re-enters the correct stage.
 func InferStage(plansDir string) (Stage, error) {
 	for _, step := range pipeline {
 		path := filepath.Join(plansDir, step.artifact)
-		_, err := os.Stat(path)
+		data, err := os.ReadFile(path)
 		if os.IsNotExist(err) {
 			return step.stage, nil
 		}
 		if err != nil {
 			return StageDiscovery, fmt.Errorf("checking artifact %s: %w", step.artifact, err)
+		}
+		if validator, ok := validators[step.artifact]; ok {
+			if validErr := validator(string(data)); validErr != nil {
+				return step.stage, nil
+			}
 		}
 	}
 	return StageComplete, nil

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add artifact validation helpers for all five managed artifacts (VISION.md, ROADMAP.md, DEFINITION.md, PRD.md, tasks.yaml) and update InferStage to treat invalid or incomplete artifacts the same as missing ones; change StageTasks artifact from TASKS.md to tasks.yaml to align with the deterministic handoff output.
 - Replace agent-driven handoff stage with deterministic renderer that reads per-epic DEFINITION.md and produces PRD.md and tasks.yaml; browser approval step preserved.
 - feat(EPIC-6-003): expand DEFINITION.md schema and update DefinitionView for richer structured editing
 - feat: EPIC-6-002 — host-owned artifact shells and enriched ACTIVE_STEP.md briefs

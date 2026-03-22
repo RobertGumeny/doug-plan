@@ -25,9 +25,9 @@ Stages are ordered. Each stage produces one artifact in `.doug/plan/`. A stage i
 | Roadmapping | `ROADMAP.md` |
 | Definition | `DEFINITION.md` |
 | PRD | `PRD.md` |
-| Tasks | `TASKS.md` |
+| Tasks | `tasks.yaml` |
 
-`InferStage` (in `internal/state`) scans the artifacts in order and returns the first stage whose artifact is absent. If all artifacts are present, it returns `StageComplete`.
+`InferStage` (in `internal/state`) scans the artifacts in order and returns the first stage whose artifact is absent **or invalid**. If all artifacts are present and valid, it returns `StageComplete`. Each artifact has a content validator (see `internal/state/validate.go`); an unfilled shell is treated the same as a missing file so the pipeline re-enters the correct stage.
 
 ## Run Loop (`internal/orchestrator`)
 

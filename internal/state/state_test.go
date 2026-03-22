@@ -6,10 +6,21 @@ import (
 	"testing"
 )
 
+// validArtifactContent maps each managed artifact filename to minimal content
+// that satisfies its validator. Tests that need a "present and valid" artifact
+// use this map so InferStage does not treat the file as incomplete.
+var validArtifactContent = map[string]string{
+	"VISION.md":     "# Vision\n\nContent here.\n",
+	"ROADMAP.md":    "---\nproject: \"MyProject\"\nsource: VISION.md\n---\n\n# Roadmap\n",
+	"DEFINITION.md": "# Definition Complete\n\nAll epics defined.\n",
+	"PRD.md":        "# PRD\n\nContent here.\n",
+	"tasks.yaml":    "epics:\n  - id: \"EPIC-1\"\n",
+}
+
 func TestInferStage(t *testing.T) {
 	tests := []struct {
 		name      string
-		artifacts []string // files to create in the temp plans dir
+		artifacts []string // files to create with valid content
 		want      Stage
 	}{
 		{
@@ -39,7 +50,7 @@ func TestInferStage(t *testing.T) {
 		},
 		{
 			name:      "all artifacts → Complete",
-			artifacts: []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"},
+			artifacts: []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "tasks.yaml"},
 			want:      StageComplete,
 		},
 		{
@@ -53,9 +64,87 @@ func TestInferStage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			dir := t.TempDir()
 			for _, artifact := range tt.artifacts {
-				if err := os.WriteFile(filepath.Join(dir, artifact), []byte("stub"), 0644); err != nil {
+				content, ok := validArtifactContent[artifact]
+				if !ok {
+					content = "stub"
+				}
+				if err := os.WriteFile(filepath.Join(dir, artifact), []byte(content), 0644); err != nil {
 					t.Fatalf("setup: writing %s: %v", artifact, err)
 				}
+			}
+
+			got, err := InferStage(dir)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("InferStage() = %v (%d), want %v (%d)", got, got, tt.want, tt.want)
+			}
+		})
+	}
+}
+
+func TestInferStage_InvalidArtifacts(t *testing.T) {
+	// invalidArtifactContent maps each artifact to content that fails its
+	// validator (i.e. the unfilled shell written by MaterializeArtifact).
+	invalidArtifactContent := map[string]string{
+		"VISION.md":     "# Vision\n\n## Problem Statement\n\n## Goals\n",
+		"ROADMAP.md":    "---\nproject: \"\"\nsource: VISION.md\n---\n\n# Roadmap\n",
+		"DEFINITION.md": "---\nid: \"\"\nname: \"\"\n---\n\n# Definition\n",
+		"PRD.md":        "not a heading\n",
+		"tasks.yaml":    "# not yaml\n",
+	}
+
+	tests := []struct {
+		name            string
+		validArtifacts  []string // present with valid content
+		invalidArtifact string   // present with invalid (shell) content
+		want            Stage
+	}{
+		{
+			name:            "invalid VISION.md → re-enters Discovery",
+			validArtifacts:  nil,
+			invalidArtifact: "VISION.md",
+			want:            StageDiscovery,
+		},
+		{
+			name:            "valid VISION.md + invalid ROADMAP.md → re-enters Roadmapping",
+			validArtifacts:  []string{"VISION.md"},
+			invalidArtifact: "ROADMAP.md",
+			want:            StageRoadmapping,
+		},
+		{
+			name:            "valid VISION.md + ROADMAP.md + invalid DEFINITION.md → re-enters Definition",
+			validArtifacts:  []string{"VISION.md", "ROADMAP.md"},
+			invalidArtifact: "DEFINITION.md",
+			want:            StageDefinition,
+		},
+		{
+			name:            "all prior valid + invalid PRD.md → re-enters PRD",
+			validArtifacts:  []string{"VISION.md", "ROADMAP.md", "DEFINITION.md"},
+			invalidArtifact: "PRD.md",
+			want:            StagePRD,
+		},
+		{
+			name:            "all prior valid + invalid tasks.yaml → re-enters Tasks",
+			validArtifacts:  []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md"},
+			invalidArtifact: "tasks.yaml",
+			want:            StageTasks,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			for _, artifact := range tt.validArtifacts {
+				content := validArtifactContent[artifact]
+				if err := os.WriteFile(filepath.Join(dir, artifact), []byte(content), 0644); err != nil {
+					t.Fatalf("setup: writing valid %s: %v", artifact, err)
+				}
+			}
+			invalidContent := invalidArtifactContent[tt.invalidArtifact]
+			if err := os.WriteFile(filepath.Join(dir, tt.invalidArtifact), []byte(invalidContent), 0644); err != nil {
+				t.Fatalf("setup: writing invalid %s: %v", tt.invalidArtifact, err)
 			}
 
 			got, err := InferStage(dir)
@@ -113,31 +202,31 @@ func TestClearArtifactsFromStage(t *testing.T) {
 	}{
 		{
 			name:        "clear from Discovery removes all",
-			present:     []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"},
+			present:     []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "tasks.yaml"},
 			clearFrom:   StageDiscovery,
 			wantPresent: nil,
-			wantAbsent:  []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"},
+			wantAbsent:  []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "tasks.yaml"},
 		},
 		{
 			name:        "clear from Definition keeps earlier artifacts",
-			present:     []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"},
+			present:     []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "tasks.yaml"},
 			clearFrom:   StageDefinition,
 			wantPresent: []string{"VISION.md", "ROADMAP.md"},
-			wantAbsent:  []string{"DEFINITION.md", "PRD.md", "TASKS.md"},
+			wantAbsent:  []string{"DEFINITION.md", "PRD.md", "tasks.yaml"},
 		},
 		{
 			name:        "clear from PRD keeps earlier artifacts",
-			present:     []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"},
+			present:     []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "tasks.yaml"},
 			clearFrom:   StagePRD,
 			wantPresent: []string{"VISION.md", "ROADMAP.md", "DEFINITION.md"},
-			wantAbsent:  []string{"PRD.md", "TASKS.md"},
+			wantAbsent:  []string{"PRD.md", "tasks.yaml"},
 		},
 		{
-			name:        "clear from Tasks removes only TASKS.md",
-			present:     []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"},
+			name:        "clear from Tasks removes only tasks.yaml",
+			present:     []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "tasks.yaml"},
 			clearFrom:   StageTasks,
 			wantPresent: []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md"},
-			wantAbsent:  []string{"TASKS.md"},
+			wantAbsent:  []string{"tasks.yaml"},
 		},
 		{
 			name:        "clear from Roadmapping with only VISION.md present is no-op for present",
@@ -151,7 +240,7 @@ func TestClearArtifactsFromStage(t *testing.T) {
 			present:     nil,
 			clearFrom:   StageDiscovery,
 			wantPresent: nil,
-			wantAbsent:  []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"},
+			wantAbsent:  []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "tasks.yaml"},
 		},
 	}
 	for _, tt := range tests {
@@ -181,7 +270,7 @@ func TestClearArtifactsFromStage(t *testing.T) {
 
 func TestClearAllArtifacts(t *testing.T) {
 	dir := t.TempDir()
-	for _, a := range []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"} {
+	for _, a := range []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "tasks.yaml"} {
 		if err := os.WriteFile(filepath.Join(dir, a), []byte("stub"), 0644); err != nil {
 			t.Fatalf("setup: %v", err)
 		}
@@ -189,7 +278,7 @@ func TestClearAllArtifacts(t *testing.T) {
 	if err := ClearAllArtifacts(dir); err != nil {
 		t.Fatalf("ClearAllArtifacts: %v", err)
 	}
-	for _, a := range []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "TASKS.md"} {
+	for _, a := range []string{"VISION.md", "ROADMAP.md", "DEFINITION.md", "PRD.md", "tasks.yaml"} {
 		if _, err := os.Stat(filepath.Join(dir, a)); !os.IsNotExist(err) {
 			t.Errorf("expected %s to be absent after ClearAllArtifacts", a)
 		}
