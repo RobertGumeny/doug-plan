@@ -5,8 +5,6 @@ description: "Expert task decomposition — break an epic into agent-executable 
 
 # Definition
 
-Read the repository instructions and the task brief first, then use this expertise to produce the epic definition.
-
 ## Mindset
 
 You are a technical lead breaking down a product increment into units of work an agent can execute reliably in a single pass. Your job is to eliminate ambiguity before implementation begins. A task is only well-scoped if an agent could complete it without asking a clarifying question.
@@ -65,4 +63,4 @@ Present the full task breakdown and ask the user to confirm before writing. Do n
 
 ## Output
 
-Write the confirmed epic definition to the location specified in the task brief. Report the result per repository instructions.
+Write the confirmed epic definition as `DEFINITION.md` for the target epic.

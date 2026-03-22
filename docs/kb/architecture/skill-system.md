@@ -1,6 +1,6 @@
 ---
 title: Skill System
-updated: 2026-03-19
+updated: 2026-03-22
 category: Architecture
 tags: [skills, scaffold, agents, claude, codex, gemini, discovery, roadmapping, definition, handoff]
 related_articles:
@@ -111,7 +111,7 @@ When building a new skill, start by copying `research/SKILL.md` and adapting the
 
 ## Planning Skills: `discovery`, `roadmapping`, `definition`, and `handoff`
 
-These four skills implement the first four stages of the `doug-plan` pipeline. All can be invoked standalone or as part of a pipeline run.
+These four skills implement the planning stages of a `doug-plan` session. The first three (`discovery`, `roadmapping`, `definition`) are portable expertise modules: they contain no host-specific orchestration assumptions, no references to orchestrator control files, and no retry or loop semantics. Each skill can be invoked independently; the host is responsible for providing context and consuming output.
 
 ### `discovery`
 
@@ -119,11 +119,11 @@ Runs a structured interview with the user and synthesizes the answers into `VISI
 
 **Phases**: Ingest Existing Context → Guided Interview → Draft VISION.md → Review and Confirm → Write Output
 
-- Phase 1 reads `.doug/plan/ACTIVE_STEP.md` (if present) and any research reports from `.doug/plans/research/`.
-- Phase 2 asks 10 structured questions covering project identity, users, scope, constraints, and success criteria. Follow-up questions are asked until all answers are concrete (no "TBD" or placeholders).
-- Phase 5 writes `.doug/plan/VISION.md` and, if running in pipeline mode, sets `outcome: "SUCCESS"` in `ACTIVE_STEP.md`.
+- Phase 1 reads any research reports or prior context provided as input.
+- Phase 2 asks structured questions covering project identity, users, scope, constraints, and success criteria. Follow-up questions are asked until all answers are concrete (no "TBD" or placeholders).
+- Phase 5 writes `VISION.md`.
 
-**Output**: `.doug/plan/VISION.md` with sections: Project Name, Problem Statement, Target Users, Goals, Non-Goals, Constraints, Success Criteria, Failure Conditions, Background.
+**Output**: `VISION.md` with sections: Project Name, Problem Statement, Target Users, Goals, Non-Goals, Constraints, Success Criteria, Failure Conditions, Background.
 
 ### `roadmapping`
 
@@ -131,9 +131,9 @@ Reads `VISION.md` and produces a `ROADMAP.md` containing sequenced epics in hybr
 
 **Phases**: Ingest Context → Synthesize Epics → Draft ROADMAP.md → Review and Confirm → Write Output
 
-- Phase 1 reads `.doug/plan/ACTIVE_STEP.md`, locates `VISION.md` (checks `.doug/plan/VISION.md` then project root), and reads any research reports from `.doug/plans/research/`.
+- Phase 1 locates `VISION.md` and reads any research reports or prior context provided as input.
 - Phase 2 derives a minimal set of 3–8 epics, scoped at the "what are we building" level, sequenced by dependency.
-- Phase 5 writes `.doug/plan/ROADMAP.md` and, if running in pipeline mode, sets `outcome: "SUCCESS"` in `ACTIVE_STEP.md`.
+- Phase 5 writes `ROADMAP.md`.
 
 **Output format** — hybrid Markdown + YAML frontmatter:
 
@@ -166,12 +166,12 @@ Reads `VISION.md` and `ROADMAP.md`, identifies the next undefined epic, and prod
 
 **Phases**: Ingest Context → Identify Next Epic → Scope the Target Epic → Draft and Review → Write Output
 
-- Phase 1 reads `.doug/plan/ACTIVE_STEP.md` (if present), locates `VISION.md` and `ROADMAP.md`.
-- Phase 2 finds the first epic in ROADMAP.md that does not have `.doug/plan/epics/<EPIC-ID>/DEFINITION.md`.
+- Phase 1 locates `VISION.md` and `ROADMAP.md`.
+- Phase 2 identifies the next epic that does not yet have a `DEFINITION.md`.
 - Phase 3 produces 3–8 tasks per epic, each with an ID (`<EPIC-ID>-NNN`), type, description, and 2–5 measurable acceptance criteria.
-- Phase 5 writes `.doug/plan/epics/<EPIC-ID>/DEFINITION.md`. If all epics are now defined, it also writes `.doug/plan/DEFINITION.md` and sets `outcome` to `SUCCESS`. If more epics remain, it sets `outcome` to `RETRY` so the orchestrator re-invokes the skill for the next epic.
+- Phase 5 writes `DEFINITION.md` for the target epic.
 
-**Output**: Per-epic `.doug/plan/epics/<EPIC-ID>/DEFINITION.md` files, plus `.doug/plan/DEFINITION.md` when all epics are defined.
+**Output**: `DEFINITION.md` for the target epic.
 
 ### `handoff`
 

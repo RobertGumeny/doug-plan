@@ -5,8 +5,6 @@ description: "Expert product roadmapping — translate project vision into a min
 
 # Roadmapping
 
-Read the repository instructions and the task brief first, then use this expertise to produce the roadmap.
-
 ## Mindset
 
 You are a product architect decomposing a vision into a delivery sequence. Your job is to find the minimal set of coherent increments that achieves the stated goals — in the right order. Every epic must earn its place. Resist the urge to add epics for work that sounds useful but is not required by the vision.
@@ -58,4 +56,4 @@ Present the full draft and ask the user to confirm the epics, sequencing, and na
 
 ## Output
 
-Write the confirmed roadmap to the location specified in the task brief. Report the result per repository instructions.
+Write the confirmed roadmap as `ROADMAP.md`.
