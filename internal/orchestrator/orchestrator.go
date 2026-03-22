@@ -50,6 +50,10 @@ func Run(opts Options) error {
 		return nil
 	}
 
+	if err := agent.MaterializeArtifact(opts.ProjectRoot, stage); err != nil {
+		return fmt.Errorf("materializing artifact shell: %w", err)
+	}
+
 	if err := agent.WriteStep(opts.ProjectRoot, stage); err != nil {
 		return fmt.Errorf("writing ACTIVE_STEP.md: %w", err)
 	}
@@ -93,6 +97,13 @@ func Run(opts Options) error {
 		return fmt.Errorf("step %s failed: agent reported FAILURE", stage)
 	case agent.OutcomeRetry:
 		writef(opts.Out, "Step %s requesting retry.\n", stage)
+		// Remove the artifact shell so InferStage re-enters this stage on the
+		// next run. On a RETRY the agent has not finished the stage, so any file
+		// at the artifact path is either the host-created shell or partial work
+		// that should be regenerated. Silently ignore not-exist errors.
+		if artifactFile := state.ArtifactFile(stage); artifactFile != "" {
+			_ = os.Remove(filepath.Join(plansDir, artifactFile))
+		}
 	}
 
 	return nil

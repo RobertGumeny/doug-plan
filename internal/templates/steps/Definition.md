@@ -9,6 +9,22 @@ Invoke `/definition` to define the next unmaterialized epic from `.doug/plan/ROA
 
 **Prerequisites**: `.doug/plan/VISION.md` and `.doug/plan/ROADMAP.md` must exist. If either is missing, set `outcome` to `FAILURE` and stop.
 
+**Target artifact**: `.doug/plan/DEFINITION.md` — a shell has been pre-created with the required headings. Write the completed definition index here only when all epics are defined; on RETRY leave this file untouched (the host will remove it and recreate the shell on the next invocation).
+
+**Required headings for** `.doug/plan/DEFINITION.md`:
+- `# Definition`
+- `## Defined Epics`
+
+**Per-epic artifact**: `.doug/plan/epics/<EPIC-ID>/DEFINITION.md` — write one file per epic as it is defined. Required headings:
+- `# Epic Definition: <EPIC-ID> — <Epic Name>`
+- `## Overview`
+- `## Tasks` (with `### <EPIC-ID>-NNN: <Task Name>` subsections)
+
+**Supporting files to read**:
+- `.doug/plan/VISION.md` — required; provides project context
+- `.doug/plan/ROADMAP.md` — required; provides the epic list and sequencing
+- `.doug/plan/epics/*/DEFINITION.md` — read existing epic definitions to determine which epic is next
+
 The skill will:
 
 1. Read `.doug/plan/VISION.md` and `.doug/plan/ROADMAP.md`.

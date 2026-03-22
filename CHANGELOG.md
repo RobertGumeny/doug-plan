@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- feat: EPIC-6-002 — host-owned artifact shells and enriched ACTIVE_STEP.md briefs
 - feat: rewrite discovery, roadmapping, and definition skills to be host-agnostic
 
 ### Changed

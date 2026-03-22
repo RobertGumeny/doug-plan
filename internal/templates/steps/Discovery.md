@@ -7,6 +7,22 @@
 
 Invoke `/discovery` to conduct a guided interview and produce `.doug/plan/VISION.md`.
 
+**Target artifact**: `.doug/plan/VISION.md` — a shell has been pre-created with the required headings. Fill in each section; do not add or remove top-level headings.
+
+**Required headings** (in order):
+- `## Project Name`
+- `## Problem Statement`
+- `## Target Users`
+- `## Goals`
+- `## Non-Goals`
+- `## Constraints`
+- `## Success Criteria`
+- `## Failure Conditions`
+- `## Background`
+
+**Supporting files to read** (if present):
+- `.doug/plans/research/` — any prior research reports (optional)
+
 The skill will:
 
 1. Ingest any research reports from `.doug/plans/research/` (if present).

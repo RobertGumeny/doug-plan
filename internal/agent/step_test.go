@@ -219,3 +219,77 @@ func TestArchiveStep_Noop_WhenNoActiveStep(t *testing.T) {
 		t.Fatalf("ArchiveStep with no file: %v", err)
 	}
 }
+
+func TestMaterializeArtifact_CreatesShell(t *testing.T) {
+	cases := []struct {
+		stage        state.Stage
+		artifactFile string
+		wantHeading  string
+	}{
+		{state.StageDiscovery, "VISION.md", "# Vision"},
+		{state.StageRoadmapping, "ROADMAP.md", "# Roadmap"},
+		{state.StageDefinition, "DEFINITION.md", "# Definition"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.artifactFile, func(t *testing.T) {
+			root := t.TempDir()
+
+			if err := MaterializeArtifact(root, tc.stage); err != nil {
+				t.Fatalf("MaterializeArtifact: %v", err)
+			}
+
+			dest := filepath.Join(root, ".doug", "plan", tc.artifactFile)
+			data, err := os.ReadFile(dest)
+			if err != nil {
+				t.Fatalf("reading %s: %v", tc.artifactFile, err)
+			}
+			if !strings.Contains(string(data), tc.wantHeading) {
+				t.Errorf("%s missing heading %q; got:\n%s", tc.artifactFile, tc.wantHeading, data)
+			}
+		})
+	}
+}
+
+func TestMaterializeArtifact_NoOverwriteExisting(t *testing.T) {
+	root := t.TempDir()
+
+	planDir := filepath.Join(root, ".doug", "plan")
+	if err := os.MkdirAll(planDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	existing := "agent-written content"
+	dest := filepath.Join(planDir, "VISION.md")
+	if err := os.WriteFile(dest, []byte(existing), 0o644); err != nil {
+		t.Fatalf("writing existing file: %v", err)
+	}
+
+	if err := MaterializeArtifact(root, state.StageDiscovery); err != nil {
+		t.Fatalf("MaterializeArtifact: %v", err)
+	}
+
+	data, err := os.ReadFile(dest)
+	if err != nil {
+		t.Fatalf("reading VISION.md: %v", err)
+	}
+	if string(data) != existing {
+		t.Errorf("expected existing content to be preserved; got:\n%s", data)
+	}
+}
+
+func TestMaterializeArtifact_NoopForStagesWithoutTemplate(t *testing.T) {
+	root := t.TempDir()
+
+	// PRD and Tasks stages have no artifact templates; should be a clean no-op.
+	for _, stage := range []state.Stage{state.StagePRD, state.StageTasks} {
+		if err := MaterializeArtifact(root, stage); err != nil {
+			t.Fatalf("MaterializeArtifact(%s): %v", stage, err)
+		}
+		// Artifact file must not have been created.
+		artifactFile := state.ArtifactFile(stage)
+		dest := filepath.Join(root, ".doug", "plan", artifactFile)
+		if _, err := os.Stat(dest); !os.IsNotExist(err) {
+			t.Errorf("expected %s not to exist after no-op MaterializeArtifact", artifactFile)
+		}
+	}
+}

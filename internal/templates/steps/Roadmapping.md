@@ -9,6 +9,17 @@ Invoke `/roadmapping` to transform `.doug/plan/VISION.md` into a sequenced `ROAD
 
 **Prerequisite**: `.doug/plan/VISION.md` must exist. If it is missing, set `outcome` to `FAILURE` and stop.
 
+**Target artifact**: `.doug/plan/ROADMAP.md` — a shell has been pre-created with the required structure. Replace the shell content with the completed roadmap; the top-level YAML frontmatter and `# Roadmap` heading must be preserved.
+
+**Required structure**:
+- Top-level YAML frontmatter with `project`, `generated`, and `source: VISION.md` fields
+- `# Roadmap` heading
+- One `## EPIC-N: <Title>` section per epic, each with an embedded YAML block containing `id`, `name`, `sequence`, and `status: planned`
+
+**Supporting files to read**:
+- `.doug/plan/VISION.md` — required; provides goals, non-goals, and constraints
+- `.doug/plans/research/` — any prior research reports (optional)
+
 The skill will:
 
 1. Read `.doug/plan/VISION.md` and any research reports from `.doug/plans/research/` (if present).

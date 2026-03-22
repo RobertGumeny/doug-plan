@@ -61,6 +61,41 @@ outcome: ""
 `, stage, stage)
 }
 
+// MaterializeArtifact writes the host-owned artifact shell for the given stage
+// to its artifact path in <projectRoot>/.doug/plan/ if the file does not already
+// exist. Stages without an embedded shell template (e.g. PRD, Tasks) are a
+// no-op. The shell gives the agent a pre-defined structure to fill in rather
+// than requiring the agent to invent document shape.
+func MaterializeArtifact(projectRoot string, stage state.Stage) error {
+	artifactFile := state.ArtifactFile(stage)
+	if artifactFile == "" {
+		return nil
+	}
+
+	templateName := "artifacts/" + artifactFile
+	data, err := templates.Artifacts.ReadFile(templateName)
+	if err != nil {
+		// No embedded template for this stage — nothing to materialize.
+		return nil
+	}
+
+	planDir := layout.PlanDir(projectRoot)
+	if err := os.MkdirAll(planDir, 0o755); err != nil {
+		return fmt.Errorf("creating plan dir: %w", err)
+	}
+
+	dest := filepath.Join(planDir, artifactFile)
+	if _, err := os.Stat(dest); err == nil {
+		// File already exists; leave it untouched so agent-written content is preserved.
+		return nil
+	}
+
+	if err := os.WriteFile(dest, data, 0o644); err != nil {
+		return fmt.Errorf("materializing artifact %s: %w", artifactFile, err)
+	}
+	return nil
+}
+
 // ArchiveStep moves <projectRoot>/.doug/plan/ACTIVE_STEP.md into
 // <projectRoot>/.doug/plan/logs/ with a unique name so archived files do not
 // overwrite each other.
