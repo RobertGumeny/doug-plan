@@ -10,6 +10,7 @@ import (
 	"github.com/robertgumeny/doug-plan/internal/agent"
 	"github.com/robertgumeny/doug-plan/internal/approval"
 	"github.com/robertgumeny/doug-plan/internal/config"
+	"github.com/robertgumeny/doug-plan/internal/handoff"
 	"github.com/robertgumeny/doug-plan/internal/layout"
 	"github.com/robertgumeny/doug-plan/internal/state"
 )
@@ -48,6 +49,11 @@ func Run(opts Options) error {
 	if stage == state.StageComplete {
 		writef(opts.Out, "Pipeline complete. All artifacts are present in %s.\n", plansDir)
 		return nil
+	}
+
+	// StagePRD is handled deterministically — no agent invocation.
+	if stage == state.StagePRD {
+		return runHandoff(opts, plansDir)
 	}
 
 	if err := agent.MaterializeArtifact(opts.ProjectRoot, stage); err != nil {
@@ -140,6 +146,32 @@ func applyReentry(opts Options, plansDir string) error {
 
 func writef(w io.Writer, format string, args ...any) {
 	_, _ = fmt.Fprintf(w, format, args...)
+}
+
+// runHandoff executes the deterministic handoff renderer for StagePRD.
+// It renders PRD.md and tasks.yaml from per-epic DEFINITION.md files and then
+// runs the approval gate so the user can review both before the stage advances.
+func runHandoff(opts Options, plansDir string) error {
+	writef(opts.Out, "Pipeline entry point: %s\n", state.StagePRD)
+
+	if err := handoff.Execute(plansDir); err != nil {
+		return fmt.Errorf("deterministic handoff: %w", err)
+	}
+
+	writef(opts.Out, "Step %s completed successfully.\n", state.StagePRD)
+
+	cfg, err := config.Load(opts.ProjectRoot)
+	if err != nil {
+		return fmt.Errorf("loading config: %w", err)
+	}
+
+	if err := runApprovalGate(opts, cfg, state.StagePRD, plansDir); err != nil {
+		if errors.Is(err, approval.ErrSkipped) {
+			return nil
+		}
+		return err
+	}
+	return nil
 }
 
 // runApprovalGate resolves the approval mode (CLI flag takes precedence over
