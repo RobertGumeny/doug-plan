@@ -1,6 +1,6 @@
 ---
 title: Orchestrator Loop
-updated: 2026-03-20
+updated: 2026-03-22
 category: Architecture
 tags: [orchestrator, state, approval, agent, pipeline]
 related_articles:
@@ -35,19 +35,26 @@ Each call to `orchestrator.Run` executes one pipeline step:
 
 1. **Re-entry**: Apply `--fresh` or `--rerun` to clear artifacts (see Re-entry Modes below).
 2. **Infer stage**: `state.InferStage` reads `.doug/plan/` and returns the current stage.
-3. **Write step brief**: `agent.WriteStep` creates `.doug/plan/ACTIVE_STEP.md`. It loads a stage-specific template from `internal/templates/steps/<Stage>.md` when one exists (currently `Discovery.md`, `Roadmapping.md`, `Definition.md`, and `PRD.md`); otherwise a generic template is written.
-4. **Invoke agent**: `agent.Invoke` runs the configured agent command as a subprocess, inheriting stdin/stdout/stderr.
-5. **Parse result**: `agent.ParseResult` reads the `## Agent Result` YAML frontmatter from `ACTIVE_STEP.md` and extracts the `outcome` field.
-6. **Archive step**: `agent.ArchiveStep` moves `ACTIVE_STEP.md` to `.doug/plan/logs/<stage>_<nanosecond>.md`.
-7. **Dispatch outcome**:
+3. **StagePRD shortcut**: If the current stage is `PRD`, the orchestrator calls `handoff.Execute` (the deterministic renderer) directly and then runs the approval gate. No agent is invoked; steps 4–8 are skipped.
+4. **Materialize artifact shell**: `agent.MaterializeArtifact` writes the host-owned artifact template to `.doug/plan/<artifact>` if the file does not already exist. Stages without an embedded shell template (PRD, Tasks) are a no-op. This gives the agent a pre-defined document structure to fill rather than requiring it to invent the shape.
+5. **Write step brief**: `agent.WriteStep` creates `.doug/plan/ACTIVE_STEP.md`. It loads a stage-specific template from `internal/templates/steps/<Stage>.md` when one exists (currently `Discovery.md`, `Roadmapping.md`, and `Definition.md`); otherwise a generic template is written.
+6. **Invoke agent**: `agent.Invoke` runs the configured agent command as a subprocess, inheriting stdin/stdout/stderr.
+7. **Parse result**: `agent.ParseResult` reads the `## Agent Result` YAML frontmatter from `ACTIVE_STEP.md` and extracts the `outcome` field.
+8. **Archive step**: `agent.ArchiveStep` moves `ACTIVE_STEP.md` to `.doug/plan/logs/<stage>_<nanosecond>.md`.
+9. **Dispatch outcome**:
    - `SUCCESS` → run approval gate; advance on confirmation.
    - `FAILURE` → return a non-nil error; pipeline stops.
-   - `RETRY` → return nil; call `run` again to retry the same stage.
+   - `RETRY` → remove the artifact shell (so `InferStage` re-enters this stage on the next run) and return nil.
 
 ## ACTIVE_STEP.md Lifecycle
 
+ACTIVE_STEP.md is only written for agent-driven stages (Discovery, Roadmapping, Definition). StagePRD uses the deterministic handoff renderer and does not write ACTIVE_STEP.md.
+
 ```
 orchestrator.Run called
+       │
+       ▼
+agent.MaterializeArtifact → writes artifact shell if absent
        │
        ▼
 agent.WriteStep → creates .doug/plan/ACTIVE_STEP.md
@@ -142,10 +149,11 @@ Flags:
 | Package | Responsibility |
 | ------- | -------------- |
 | `internal/state` | Stage type, `InferStage`, `ArtifactFile`, `ClearArtifacts*`, `StageFromString` |
-| `internal/agent` | `WriteStep`, `Invoke`, `ParseResult`, `ArchiveStep`, `Outcome` type |
+| `internal/agent` | `WriteStep`, `MaterializeArtifact`, `Invoke`, `ParseResult`, `ArchiveStep`, `Outcome` type |
+| `internal/handoff` | `Execute` — deterministic renderer: parses per-epic `DEFINITION.md` files and writes `PRD.md` and `tasks.yaml` |
 | `internal/approval` | `Mode` type, `Parse`, `Gate`, `BrowserGate`, `ErrSkipped` |
 | `internal/config` | `Config` struct, `Load`, `AgentCommand` |
 | `internal/orchestrator` | `Run`, `Options` — wires all packages together |
 | `internal/server` | Embedded HTTP server for browser review (`Serve`) |
 | `internal/ui` | `Bundle embed.FS` — compiled React bundle (`bundle.html`) |
-| `internal/templates` | Embedded `Init` FS (scaffold files) and `Steps` FS (per-stage ACTIVE_STEP.md templates) |
+| `internal/templates` | Embedded `Init` FS (scaffold files), `Steps` FS (per-stage ACTIVE_STEP.md templates), and `Artifacts` FS (artifact shell templates) |

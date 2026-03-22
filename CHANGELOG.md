@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat: rewrite discovery, roadmapping, and definition skills to be host-agnostic
 
 ### Changed
+- docs: update KB articles (orchestrator, skill-system) to reflect EPIC-6 changes
 
 ### Fixed
 

@@ -175,17 +175,16 @@ Reads `VISION.md` and `ROADMAP.md`, identifies the next undefined epic, and prod
 
 ### `handoff`
 
-Reads an epic definition and converts it into `PRD.md` and `tasks.yaml` conforming to the `doug` template format.
+An expertise module for converting an epic definition into a `PRD.md` and `tasks.yaml` that conform to the `doug` template format.
 
-**Phases**: Ingest Context → Identify Next Epic to Hand Off → Convert to PRD.md and tasks.yaml → Draft and Review → Write Output
+> **Note**: The default orchestrator does not invoke the `handoff` skill. `StagePRD` is handled by the deterministic renderer in `internal/handoff` (`handoff.Execute`), which parses per-epic `DEFINITION.md` files and writes the output artifacts without agent involvement. The `handoff` skill is available for standalone use or in custom workflows where the host delegates this conversion to an agent.
 
-- Phase 1 reads `.doug/plan/ACTIVE_STEP.md` (if present), locates `VISION.md` and `ROADMAP.md`, and determines whether the project is **greenfield** (no references to existing codebase, legacy system, migration, or rewrite in `VISION.md`).
-- Phase 2 finds the first epic that has `DEFINITION.md` but is missing either `PRD.md` or `tasks.yaml`.
-- Phase 3 converts `DEFINITION.md` into a `PRD.md` (epic overview, goals, non-goals, background, success criteria, deliverables, acceptance criteria) and a `tasks.yaml` (task list with id, type, status, description, acceptance_criteria).
-- Phase 5 writes both files to `.doug/plan/epics/<EPIC-ID>/`. When all defined epics are handed off, it writes `.doug/plan/PRD.md` and sets `outcome` to `SUCCESS`. If more remain, it sets `outcome` to `RETRY`.
-- **Greenfield manifest**: On the first successful handoff for a greenfield project, emits `.doug/plan/manifest.yaml` with fields: `project`, `generated`, `greenfield`, `stack`, `build_system`, `dependencies`.
+The skill contains expertise on:
 
-**Output**: Per-epic `.doug/plan/epics/<EPIC-ID>/PRD.md` and `tasks.yaml`, plus `.doug/plan/PRD.md` when all defined epics are handed off. Optionally `.doug/plan/manifest.yaml` for greenfield projects.
+- **PRD structure**: goals, non-goals, scope, background, success criteria, deliverables, acceptance criteria — all measurable, with no placeholders.
+- **tasks.yaml structure**: per-task `id`, `type`, `status`, `description`, `acceptance_criteria`. `id` values must match the epic definition exactly; `type` is one of `feature`, `fix`, `refactor`, `docs`, `test`, `chore`; `status` is always `"TODO"`.
+- **Greenfield manifest**: if `VISION.md` describes a new creation with no references to existing codebases or migrations, a `manifest.yaml` is emitted alongside the artifacts with fields: `project`, `generated`, `greenfield`, `stack`, `build_system`, `dependencies`.
+- **Review gate**: presents PRD and tasks.yaml in full and asks the user to confirm before writing output.
 
 ---
 
