@@ -7,7 +7,13 @@ import (
 	"testing"
 
 	"github.com/robertgumeny/doug-plan/internal/scaffold"
+	"gopkg.in/yaml.v3"
 )
+
+type scaffoldConfig struct {
+	Agent      string   `yaml:"agent"`
+	SkillPaths []string `yaml:"skill_paths"`
+}
 
 func TestRun_CreatesExpectedFiles(t *testing.T) {
 	dir := t.TempDir()
@@ -154,13 +160,25 @@ func TestRun_MultipleAgents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	var cfg scaffoldConfig
+	if err := yaml.Unmarshal(config, &cfg); err != nil {
+		t.Fatalf("unmarshal config: %v", err)
+	}
 	for _, path := range []string{".claude/skills", ".codex/skills", ".gemini/skills"} {
-		if !strings.Contains(string(config), path) {
-			t.Errorf("expected .doug/plan/doug-plan.yaml to contain skill path %q", path)
+		found := false
+		for _, got := range cfg.SkillPaths {
+			if got == path {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("expected skill path %q in config, got %v", path, cfg.SkillPaths)
 		}
 	}
-	if !strings.Contains(string(config), "agent: claude") {
-		t.Errorf("expected primary agent to be claude, got:\n%s", config)
+	if cfg.Agent != "claude" {
+		t.Errorf("primary agent = %q, want %q", cfg.Agent, "claude")
 	}
 }
 

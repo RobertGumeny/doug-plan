@@ -1,6 +1,9 @@
 package agent
 
 import (
+	"bytes"
+	"errors"
+	"os/exec"
 	"testing"
 )
 
@@ -11,23 +14,53 @@ func TestInvoke_EmptyArgs(t *testing.T) {
 	}
 }
 
-func TestInvoke_Success(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
+func TestBuildCommand_WiresProcessAttributes(t *testing.T) {
+	projectRoot := t.TempDir()
+	var stdin bytes.Buffer
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	cmd, err := buildCommand(projectRoot, []string{"go", "version"}, &stdin, &stdout, &stderr)
+	if err != nil {
+		t.Fatalf("buildCommand: %v", err)
 	}
-	// Use `go version` as a reliable cross-platform command that exits 0.
-	if err := Invoke(t.TempDir(), []string{"go", "version"}); err != nil {
-		t.Fatalf("Invoke go version: %v", err)
+	if len(cmd.Args) == 0 || cmd.Args[0] != "go" {
+		t.Fatalf("cmd.Args[0] = %q, want %q", cmd.Args[0], "go")
+	}
+	if len(cmd.Args) != 2 || cmd.Args[1] != "version" {
+		t.Fatalf("cmd.Args = %v, want [go version]", cmd.Args)
+	}
+	if cmd.Dir != projectRoot {
+		t.Fatalf("cmd.Dir = %q, want %q", cmd.Dir, projectRoot)
+	}
+	if cmd.Stdin != &stdin {
+		t.Fatal("stdin was not wired through to exec.Cmd")
+	}
+	if cmd.Stdout != &stdout {
+		t.Fatal("stdout was not wired through to exec.Cmd")
+	}
+	if cmd.Stderr != &stderr {
+		t.Fatal("stderr was not wired through to exec.Cmd")
 	}
 }
 
-func TestInvoke_NonZeroExit(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
+func TestInvoke_WrapsRunnerError(t *testing.T) {
+	oldRunCmd := runCmd
+	runCmd = func(cmd *exec.Cmd) error {
+		if cmd.Dir == "" {
+			t.Fatal("expected working directory to be set before run")
+		}
+		return errors.New("boom")
 	}
-	// `go` with an unknown subcommand exits non-zero.
-	err := Invoke(t.TempDir(), []string{"go", "this-subcommand-does-not-exist"})
+	defer func() {
+		runCmd = oldRunCmd
+	}()
+
+	err := Invoke(t.TempDir(), []string{"go", "version"})
 	if err == nil {
-		t.Fatal("expected error for non-zero exit, got nil")
+		t.Fatal("expected runner error, got nil")
+	}
+	if got := err.Error(); got != `agent "go" exited with error: boom` {
+		t.Fatalf("Invoke error = %q, want wrapped runner error", got)
 	}
 }

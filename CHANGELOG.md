@@ -8,31 +8,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- feat: EPIC-5-005 — POST-back-to-disk approval flow and hard mode browser gate verified; pipeline blocks until browser Approve; content written atomically to disk before pipeline advances; browser auto-opens with terminal URL fallback
-- feat: EPIC-5-004 — scoped epic definition view with guided per-task fields; PRD/tasks.yaml split layout view
-- feat: EPIC-5-003 — VISION.md and ROADMAP.md form views verified complete
-- feat: EPIC-5-002 — build and embed compiled React bundle as self-contained HTML
-- feat: EPIC-5-001 — embedded HTTP server with dynamic port, embed.FS bundle, browser gate
-- feat: EPIC-4-005 — add Handoff ACTIVE_STEP.md template and full-pipeline e2e test
+
+### Changed
+
+### Fixed
+
+### Removed
+
+## [0.1.1]
+
+### Added
+- feat: POST-back-to-disk approval flow and hard mode browser gate verified; pipeline blocks until browser Approve; content written atomically to disk before pipeline advances; browser auto-opens with terminal URL fallback
+- feat: scoped epic definition view with guided per-task fields; PRD/tasks.yaml split layout view
+- feat: VISION.md and ROADMAP.md form views verified complete
+- feat: build and embed compiled React bundle as self-contained HTML
+- feat: embedded HTTP server with dynamic port, embed.FS bundle, browser gate
+- feat: add Handoff ACTIVE_STEP.md template and full-pipeline e2e test
 - feat: add greenfield detection and manifest.yaml emission to Handoff skill
 - feat: implement Handoff skill for converting scoped epics to PRD.md and tasks.yaml
-- feat: EPIC-4-002 — implement re-entry at Scoping for subsequent epics
+- feat: implement re-entry at Scoping for subsequent epics
 - feat: implement Scoping skill and add StageScoping to pipeline
-- feat: EPIC-3-005 — end-to-end pipeline validation through Roadmapping output; add orchestrator e2e test with fakeagent helper, ROADMAP.md format validator, and regression test for inline section reference bug
-- feat: EPIC-3-004 — add ACTIVE_STEP.md templates for Discovery and Roadmapping stages
+- feat: end-to-end pipeline validation through Roadmapping output; add orchestrator e2e test with fakeagent helper, ROADMAP.md format validator, and regression test for inline section reference bug
+- feat: add ACTIVE_STEP.md templates for Discovery and Roadmapping stages
 - feat: add roadmapping skill template for VISION.md → ROADMAP.md workflow in hybrid Markdown + YAML frontmatter format
 - feat: add optional research report ingestion to Discovery skill
 - feat: add discovery skill template for guided interview → VISION.md workflow
 - feat: add golangci-lint configuration and refactor output formatting
+- feat: add `make test-integration` and move server, agent invoke, and orchestrator e2e coverage behind the tagged suite
 
 ### Changed
 - docs: add Browser UI KB article and update orchestrator/go KB articles for EPIC-5
 - docs: update KB for EPIC-4 — add Scoping/PRD stages and scoping/handoff skills
 - docs(kb): update KB articles for EPIC-3 — document discovery and roadmapping skills, stage-specific ACTIVE_STEP.md templates, and ParseResult anchor fix
-- fix: remove obsolete skill documentation and update scaffold tests to use research skill
 
 ### Fixed
+- fix: remove obsolete skill documentation and update scaffold tests to use research skill
+- fix: split fast unit tests from integration coverage with `integration` build tags  
+- fix: clear errcheck failures in server tests by checking response body close errors explicitly
 - fix: parseOutcome searched for "## Agent Result" as a substring, matching the inline reference in Briefing text before the actual section heading; changed to line-level search ("\n## Agent Result")
+- fix: add seams so unit tests no longer open browsers or spawn real subprocesses
 
 ### Removed
 

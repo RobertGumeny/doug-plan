@@ -1,4 +1,4 @@
-.PHONY: build build-ui test lint clean
+.PHONY: build build-ui test test-integration lint clean
 
 TMP_CACHE_ROOT ?= /tmp/doug-cache
 GOCACHE_DIR := $(TMP_CACHE_ROOT)/go-build
@@ -18,6 +18,9 @@ build: build-ui
 
 test:
 	go test ./...
+
+test-integration:
+	go test -tags=integration ./...
 
 lint:
 	@mkdir -p "$(GOCACHE_DIR)" "$(GOLANGCI_LINT_CACHE_DIR)"

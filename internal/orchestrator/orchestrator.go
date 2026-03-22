@@ -14,6 +14,12 @@ import (
 	"github.com/robertgumeny/doug-plan/internal/state"
 )
 
+var (
+	invokeAgent      = agent.Invoke
+	browserGateFunc  = approval.BrowserGate
+	terminalGateFunc = approval.Gate
+)
+
 // Options holds the runtime configuration for an orchestrator run.
 type Options struct {
 	ProjectRoot  string
@@ -61,7 +67,7 @@ func Run(opts Options) error {
 	}
 
 	writef(opts.Out, "Invoking agent: %s\n", args[0])
-	if err := agent.Invoke(opts.ProjectRoot, args); err != nil {
+	if err := invokeAgent(opts.ProjectRoot, args); err != nil {
 		return fmt.Errorf("agent invocation: %w", err)
 	}
 
@@ -153,9 +159,9 @@ func runApprovalGate(opts Options, cfg *config.Config, stage state.Stage, plansD
 					secondaryPath = candidate
 				}
 			}
-			return approval.BrowserGate(primaryPath, secondaryPath, stage.String(), opts.Out)
+			return browserGateFunc(primaryPath, secondaryPath, stage.String(), opts.Out)
 		}
 	}
 
-	return approval.Gate(mode, stage.String(), opts.Out, opts.In)
+	return terminalGateFunc(mode, stage.String(), opts.Out, opts.In)
 }

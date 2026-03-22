@@ -14,6 +14,8 @@ import (
 	"github.com/robertgumeny/doug-plan/internal/ui"
 )
 
+var openBrowserFunc = openBrowser
+
 // approvedPayload holds content written back to disk after browser approval.
 type approvedPayload struct {
 	primary   []byte
@@ -52,6 +54,39 @@ func Serve(artifactPath, secondaryPath, stage string, out io.Writer) error {
 		return fmt.Errorf("reading embedded bundle: %w", err)
 	}
 
+	mux := newMux(stage, content, secondaryContent, bundleBytes, approved)
+
+	srv := &http.Server{Handler: mux}
+
+	writef(out, "Review URL: %s\n", url)
+	openBrowserFunc(url)
+
+	serverErr := make(chan error, 1)
+	go func() {
+		serverErr <- srv.Serve(ln)
+	}()
+
+	select {
+	case payload := <-approved:
+		_ = srv.Shutdown(context.Background())
+		if err := writeFile(artifactPath, payload.primary); err != nil {
+			return fmt.Errorf("writing approved artifact: %w", err)
+		}
+		if secondaryPath != "" && len(payload.secondary) > 0 {
+			if err := writeFile(secondaryPath, payload.secondary); err != nil {
+				return fmt.Errorf("writing approved secondary artifact: %w", err)
+			}
+		}
+		return nil
+	case err := <-serverErr:
+		if err != nil && err != http.ErrServerClosed {
+			return fmt.Errorf("server error: %w", err)
+		}
+		return nil
+	}
+}
+
+func newMux(stage string, content, secondaryContent, bundleBytes []byte, approved chan approvedPayload) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
@@ -84,34 +119,7 @@ func Serve(artifactPath, secondaryPath, stage string, out io.Writer) error {
 		}
 	})
 
-	srv := &http.Server{Handler: mux}
-
-	writef(out, "Review URL: %s\n", url)
-	openBrowser(url)
-
-	serverErr := make(chan error, 1)
-	go func() {
-		serverErr <- srv.Serve(ln)
-	}()
-
-	select {
-	case payload := <-approved:
-		_ = srv.Shutdown(context.Background())
-		if err := writeFile(artifactPath, payload.primary); err != nil {
-			return fmt.Errorf("writing approved artifact: %w", err)
-		}
-		if secondaryPath != "" && len(payload.secondary) > 0 {
-			if err := writeFile(secondaryPath, payload.secondary); err != nil {
-				return fmt.Errorf("writing approved secondary artifact: %w", err)
-			}
-		}
-		return nil
-	case err := <-serverErr:
-		if err != nil && err != http.ErrServerClosed {
-			return fmt.Errorf("server error: %w", err)
-		}
-		return nil
-	}
+	return mux
 }
 
 func writeFile(path string, data []byte) error {
