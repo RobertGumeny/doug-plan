@@ -1,6 +1,6 @@
 ---
 title: Browser UI
-updated: 2026-03-20
+updated: 2026-03-24
 category: Architecture
 tags: [browser, ui, server, approval, react, embed]
 related_articles:
@@ -50,7 +50,7 @@ server.Shutdown → BrowserGate returns nil → pipeline advances
 - mode is `hard`, AND
 - `state.ArtifactFile(stage)` returns a non-empty filename.
 
-For the PRD stage, it also checks whether `tasks.yaml` exists alongside `PRD.md` and passes it as `secondaryPath` if present.
+For the PRD stage, `tasks.yaml` is passed as `secondaryPath` when present. For the Discovery stage, `manifest.Sync` is called first to pre-render a manifest draft; the manifest path is always passed as `secondaryPath` (the UI handles the case where the file does not yet exist).
 
 ```go
 if mode == approval.ModeHard {
@@ -64,6 +64,11 @@ if mode == approval.ModeHard {
             if _, statErr := os.Stat(candidate); statErr == nil {
                 secondaryPath = candidate
             }
+        }
+        if stage == state.StageDiscovery {
+            // Pre-render manifest draft; best-effort — UI handles missing draft
+            _ = manifest.Sync(opts.ProjectRoot)
+            secondaryPath = layout.ManifestPath(opts.ProjectRoot)
         }
         return approval.BrowserGate(primaryPath, secondaryPath, stage.String(), opts.Out)
     }
@@ -90,7 +95,7 @@ Views are rendered based on the `stage` field returned by `GET /artifact`:
 
 | Stage | View | Description |
 | ----- | ---- | ----------- |
-| `Discovery` | `VisionView` | Single large textarea for `VISION.md` |
+| `Discovery` | `VisionView` | Single textarea for `VISION.md`; shows `manifest.yaml` split panel for greenfield projects (hard mode) |
 | `Roadmapping` | `RoadmapView` | Epic card list with editable title, description, reordering |
 | `Definition` | `DefinitionView` | Task list with guided fields per task |
 | `PRD` | `PRDView` | Split prose textarea and structured task list |
@@ -129,4 +134,4 @@ make build      →  (runs build-ui first)
 
 **Atomic writes on approval**: Approved content is written via `tmp → os.Rename` to prevent partial writes if the process is killed mid-write — same pattern used throughout the project.
 
-**Secondary artifact (PRD stage only)**: `tasks.yaml` is served alongside `PRD.md` when present. Both are written back on approval if the POST body includes non-empty `secondaryContent`.
+**Secondary artifact (Discovery and PRD stages)**: At Discovery, `manifest.yaml` is pre-rendered and served alongside `VISION.md`; both are written back on approval. At PRD, `tasks.yaml` is served alongside `PRD.md` when present. In both cases the POST body `secondaryContent` is written only when non-empty.

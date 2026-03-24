@@ -1,6 +1,6 @@
 ---
 title: Orchestrator Loop
-updated: 2026-03-22
+updated: 2026-03-24
 category: Architecture
 tags: [orchestrator, state, approval, agent, pipeline]
 related_articles:
@@ -170,4 +170,6 @@ Flags:
 | `internal/orchestrator` | `Run`, `Options` — wires all packages together |
 | `internal/server` | Embedded HTTP server for browser review (`Serve`) |
 | `internal/ui` | `Bundle embed.FS` — compiled React bundle (`bundle.html`) |
+| `internal/manifest` | `Sync` — derives and writes (or removes) `.doug/plan/manifest.yaml` from approved `VISION.md` frontmatter |
+| `internal/layout` | Canonical path helpers (`PlanDir`, `ManifestPath`, etc.) |
 | `internal/templates` | Embedded `Init` FS (scaffold files), `Steps` FS (per-stage ACTIVE_STEP.md templates), and `Artifacts` FS (artifact shell templates) |
