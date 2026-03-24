@@ -9,9 +9,12 @@ package manifest
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/robertgumeny/doug-plan/internal/layout"
 	"gopkg.in/yaml.v3"
 )
 
@@ -140,4 +143,90 @@ func Marshal(m *Manifest) ([]byte, error) {
 		return nil, fmt.Errorf("marshalling manifest: %w", err)
 	}
 	return data, nil
+}
+
+// Sync reads VISION.md from the plan directory and writes or removes
+// .doug/plan/manifest.yaml depending on the project_mode in the frontmatter.
+//
+// For greenfield projects: validates required frontmatter fields, builds the
+// manifest, and writes it atomically. Returns a human-readable error if
+// required fields are missing or marshalling fails. No partial manifest is
+// ever written.
+//
+// For non-greenfield projects (or when no frontmatter is present): removes
+// .doug/plan/manifest.yaml if it exists.
+func Sync(projectRoot string) error {
+	visionPath := filepath.Join(layout.PlanDir(projectRoot), "VISION.md")
+	data, err := os.ReadFile(visionPath)
+	if err != nil {
+		return fmt.Errorf("reading VISION.md: %w", err)
+	}
+	content := string(data)
+
+	fm, err := ParseVisionFrontmatter(content)
+	if err != nil {
+		return err
+	}
+
+	manifestPath := layout.ManifestPath(projectRoot)
+
+	// Non-greenfield or no frontmatter: remove any stale manifest.
+	if fm == nil || strings.TrimSpace(fm.ProjectMode) != "greenfield" {
+		if err := os.Remove(manifestPath); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("removing stale manifest: %w", err)
+		}
+		return nil
+	}
+
+	// Greenfield: validate required fields before writing anything.
+	if err := ValidateScaffoldFrontmatter(fm); err != nil {
+		return err
+	}
+
+	projectName := extractProjectName(content)
+	m := FromVisionFrontmatter(projectName, fm)
+
+	yamlData, err := Marshal(m)
+	if err != nil {
+		return err
+	}
+
+	// Atomic write: write to .tmp then rename.
+	tmp := manifestPath + ".tmp"
+	if err := os.WriteFile(tmp, yamlData, 0o644); err != nil {
+		return fmt.Errorf("writing manifest: %w", err)
+	}
+	if err := os.Rename(tmp, manifestPath); err != nil {
+		_ = os.Remove(tmp)
+		return fmt.Errorf("committing manifest: %w", err)
+	}
+	return nil
+}
+
+// extractProjectName parses the "## Project Name" section from VISION.md
+// content and returns the first non-empty line of that section, or "" if the
+// section is absent or empty.
+func extractProjectName(content string) string {
+	// Skip past frontmatter if present.
+	if m := frontmatterRE.FindStringSubmatch(content); m != nil {
+		content = content[len(m[0]):]
+	}
+
+	inSection := false
+	for _, line := range strings.Split(content, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "## Project Name" {
+			inSection = true
+			continue
+		}
+		if inSection {
+			if strings.HasPrefix(trimmed, "## ") {
+				break
+			}
+			if trimmed != "" {
+				return trimmed
+			}
+		}
+	}
+	return ""
 }

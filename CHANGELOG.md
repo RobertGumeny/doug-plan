@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- feat(manifest): add Sync entry point — writes or removes .doug/plan/manifest.yaml based on VISION.md frontmatter; all-or-nothing atomic write; human-readable validation errors
 - Update Discovery step brief and skill contract to capture machine-readable scaffold inputs for greenfield projects
 - feat: define manifest schema v1 and extend VISION.md template with greenfield frontmatter
 - docs: add README.md and ARCHITECTURE.md for public audience

@@ -1,6 +1,8 @@
 package manifest
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -277,6 +279,194 @@ func TestMarshal_ContainsRequiredFields(t *testing.T) {
 		if !strings.Contains(yaml, expected) {
 			t.Errorf("Marshal output missing %q\nGot:\n%s", expected, yaml)
 		}
+	}
+}
+
+// --- Sync tests ---
+
+// makePlanDir creates a temp project root with a .doug/plan directory,
+// writes visionContent to VISION.md, and returns the project root path.
+func makePlanDir(t *testing.T, visionContent string) string {
+	t.Helper()
+	root := t.TempDir()
+	planDir := filepath.Join(root, ".doug", "plan")
+	if err := os.MkdirAll(planDir, 0o755); err != nil {
+		t.Fatalf("mkdir planDir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(planDir, "VISION.md"), []byte(visionContent), 0o644); err != nil {
+		t.Fatalf("write VISION.md: %v", err)
+	}
+	return root
+}
+
+func TestSync_WritesManifestForGreenfield(t *testing.T) {
+	root := makePlanDir(t, fullFrontmatter)
+	if err := Sync(root); err != nil {
+		t.Fatalf("Sync: %v", err)
+	}
+	manifestPath := filepath.Join(root, ".doug", "plan", "manifest.yaml")
+	data, err := os.ReadFile(manifestPath)
+	if err != nil {
+		t.Fatalf("reading manifest: %v", err)
+	}
+	content := string(data)
+	for _, want := range []string{
+		"schema_version: 1",
+		"mode: greenfield",
+		"language: typescript",
+		"runtime: node",
+		"- next",
+		"- Deploy on Vercel",
+	} {
+		if !strings.Contains(content, want) {
+			t.Errorf("manifest missing %q\nGot:\n%s", want, content)
+		}
+	}
+}
+
+func TestSync_ExtractsProjectName(t *testing.T) {
+	root := makePlanDir(t, fullFrontmatter)
+	if err := Sync(root); err != nil {
+		t.Fatalf("Sync: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(root, ".doug", "plan", "manifest.yaml"))
+	if err != nil {
+		t.Fatalf("reading manifest: %v", err)
+	}
+	if !strings.Contains(string(data), "name: Acme App") {
+		t.Errorf("manifest missing project name\nGot:\n%s", string(data))
+	}
+}
+
+func TestSync_RemovesManifestForNonGreenfield(t *testing.T) {
+	existingVision := `---
+project_mode: "existing"
+language: "go"
+runtime: "go"
+---
+
+# Vision
+
+## Project Name
+
+Legacy App
+`
+	root := makePlanDir(t, existingVision)
+	manifestPath := filepath.Join(root, ".doug", "plan", "manifest.yaml")
+	// Pre-create a stale manifest.
+	if err := os.WriteFile(manifestPath, []byte("stale: true\n"), 0o644); err != nil {
+		t.Fatalf("writing stale manifest: %v", err)
+	}
+
+	if err := Sync(root); err != nil {
+		t.Fatalf("Sync: %v", err)
+	}
+	if _, err := os.Stat(manifestPath); !os.IsNotExist(err) {
+		t.Error("expected manifest to be removed for non-greenfield project, but it still exists")
+	}
+}
+
+func TestSync_RemovesManifestWhenNoFrontmatter(t *testing.T) {
+	root := makePlanDir(t, noFrontmatter)
+	manifestPath := filepath.Join(root, ".doug", "plan", "manifest.yaml")
+	if err := os.WriteFile(manifestPath, []byte("stale: true\n"), 0o644); err != nil {
+		t.Fatalf("writing stale manifest: %v", err)
+	}
+
+	if err := Sync(root); err != nil {
+		t.Fatalf("Sync: %v", err)
+	}
+	if _, err := os.Stat(manifestPath); !os.IsNotExist(err) {
+		t.Error("expected manifest to be removed when no frontmatter, but it still exists")
+	}
+}
+
+func TestSync_SucceedsWhenNoStaleManifest(t *testing.T) {
+	root := makePlanDir(t, noFrontmatter)
+	// No manifest exists — Sync should not error.
+	if err := Sync(root); err != nil {
+		t.Fatalf("Sync: %v", err)
+	}
+}
+
+func TestSync_ErrorsOnMissingRequiredFields(t *testing.T) {
+	missingFields := `---
+project_mode: "greenfield"
+---
+
+# Vision
+
+## Project Name
+
+Incomplete App
+`
+	root := makePlanDir(t, missingFields)
+	err := Sync(root)
+	if err == nil {
+		t.Fatal("expected error for missing required fields, got nil")
+	}
+	if !strings.Contains(err.Error(), "language") || !strings.Contains(err.Error(), "runtime") {
+		t.Errorf("error should mention missing fields, got: %v", err)
+	}
+	// No partial manifest should be written.
+	manifestPath := filepath.Join(root, ".doug", "plan", "manifest.yaml")
+	if _, statErr := os.Stat(manifestPath); !os.IsNotExist(statErr) {
+		t.Error("partial manifest must not be written on validation failure")
+	}
+}
+
+func TestSync_ErrorsOnMalformedFrontmatter(t *testing.T) {
+	root := makePlanDir(t, "---\n: invalid: yaml: [\n---\n# Vision\n")
+	if err := Sync(root); err == nil {
+		t.Fatal("expected error for malformed frontmatter, got nil")
+	}
+}
+
+func TestSync_AtomicWrite_NoTmpLeftOnSuccess(t *testing.T) {
+	root := makePlanDir(t, fullFrontmatter)
+	if err := Sync(root); err != nil {
+		t.Fatalf("Sync: %v", err)
+	}
+	tmp := filepath.Join(root, ".doug", "plan", "manifest.yaml.tmp")
+	if _, err := os.Stat(tmp); !os.IsNotExist(err) {
+		t.Error("tmp file should not remain after successful Sync")
+	}
+}
+
+func TestExtractProjectName(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+		want    string
+	}{
+		{
+			name:    "name from section",
+			content: "# Vision\n\n## Project Name\n\nAcme App\n\n## Goals\n\nSome goals\n",
+			want:    "Acme App",
+		},
+		{
+			name:    "name from section with frontmatter",
+			content: fullFrontmatter,
+			want:    "Acme App",
+		},
+		{
+			name:    "no project name section",
+			content: "# Vision\n\n## Goals\n\nSome goals\n",
+			want:    "",
+		},
+		{
+			name:    "empty project name section",
+			content: "# Vision\n\n## Project Name\n\n## Goals\n",
+			want:    "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := extractProjectName(tt.content)
+			if got != tt.want {
+				t.Errorf("extractProjectName: got %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 
