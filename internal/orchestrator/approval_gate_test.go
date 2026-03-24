@@ -178,3 +178,45 @@ func TestRunApprovalGate_DiscoveryHardModePassesManifestAsSecondary(t *testing.T
 		t.Fatalf("stage = %q, want %q", gotStage, "Discovery")
 	}
 }
+
+// TestRunApprovalGate_DiscoveryHardMode_MalformedFrontmatter_DoesNotCrash
+// verifies that syntactically malformed VISION.md frontmatter does not cause
+// runApprovalGate to return an error in hard mode. The manifest.Sync call is
+// best-effort; the browser gate must still be invoked so the user can fix
+// VISION.md in the split-view UI.
+func TestRunApprovalGate_DiscoveryHardMode_MalformedFrontmatter_DoesNotCrash(t *testing.T) {
+	projectRoot := t.TempDir()
+	plansDir := filepath.Join(projectRoot, ".doug", "plan")
+	if err := os.MkdirAll(plansDir, 0o755); err != nil {
+		t.Fatalf("mkdir plansDir: %v", err)
+	}
+	// Write a VISION.md with syntactically malformed frontmatter.
+	malformed := "---\n: invalid: yaml: [\n---\n# Vision\n"
+	if err := os.WriteFile(filepath.Join(plansDir, "VISION.md"), []byte(malformed), 0o644); err != nil {
+		t.Fatalf("write VISION.md: %v", err)
+	}
+
+	browserCalled := false
+	oldBrowserGate := browserGateFunc
+	browserGateFunc = func(_, _, _ string, _ io.Writer) error {
+		browserCalled = true
+		return nil
+	}
+	defer func() { browserGateFunc = oldBrowserGate }()
+
+	hardMode, err := runApprovalGate(
+		Options{ProjectRoot: projectRoot},
+		&config.Config{ApprovalMode: "hard"},
+		state.StageDiscovery,
+		plansDir,
+	)
+	if err != nil {
+		t.Fatalf("runApprovalGate should not error for malformed frontmatter in hard mode: %v", err)
+	}
+	if !hardMode {
+		t.Fatal("expected hardModeUsed=true")
+	}
+	if !browserCalled {
+		t.Fatal("browser gate must be called even when VISION.md frontmatter is malformed")
+	}
+}

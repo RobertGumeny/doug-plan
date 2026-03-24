@@ -229,6 +229,59 @@ func TestRun_ManifestSyncAfterDiscovery_NonGreenfield(t *testing.T) {
 	}
 }
 
+// TestRun_RerunDiscovery_RemovesAndRegeneratesManifest verifies the full rerun
+// path: a pre-existing manifest from a previous Discovery run is removed by
+// applyReentry, and then regenerated after the new Discovery agent completes.
+func TestRun_RerunDiscovery_RemovesAndRegeneratesManifest(t *testing.T) {
+	root, planDir := makeManifestTestRoot(t)
+
+	// Pre-populate VISION.md and manifest.yaml as if a previous Discovery run
+	// had already completed and produced a manifest for a different project.
+	if err := os.WriteFile(filepath.Join(planDir, "VISION.md"), []byte("# Vision\n\nOld content.\n"), 0o644); err != nil {
+		t.Fatalf("write old VISION.md: %v", err)
+	}
+	oldManifest := "schema_version: 1\nproject:\n  name: Old Project\n  mode: greenfield\n"
+	manifestPath := filepath.Join(planDir, "manifest.yaml")
+	if err := os.WriteFile(manifestPath, []byte(oldManifest), 0o644); err != nil {
+		t.Fatalf("write old manifest: %v", err)
+	}
+
+	oldInvoke := invokeAgent
+	oldTerminal := terminalGateFunc
+	invokeAgent = makeDiscoveryAgentMock(greenfieldVision)
+	terminalGateFunc = func(_ approval.Mode, _ string, _ io.Writer, _ io.Reader) error { return nil }
+	defer func() {
+		invokeAgent = oldInvoke
+		terminalGateFunc = oldTerminal
+	}()
+
+	opts := Options{
+		ProjectRoot:  root,
+		Out:          io.Discard,
+		In:           strings.NewReader(""),
+		ApprovalMode: "auto",
+		RerunStage:   "Discovery",
+	}
+	if err := Run(opts); err != nil {
+		t.Fatalf("Run with RerunStage=Discovery: %v", err)
+	}
+
+	data, err := os.ReadFile(manifestPath)
+	if err != nil {
+		t.Fatalf("manifest.yaml not present after rerun: %v", err)
+	}
+	content := string(data)
+	if strings.Contains(content, "Old Project") {
+		t.Error("manifest still contains old project name after rerun")
+	}
+	if !strings.Contains(content, "mode: greenfield") {
+		t.Errorf("regenerated manifest missing greenfield mode\nGot:\n%s", content)
+	}
+	if !strings.Contains(content, "language: typescript") {
+		t.Errorf("regenerated manifest missing language field\nGot:\n%s", content)
+	}
+}
+
 func TestRun_ManifestSyncAfterDiscovery_MissingRequiredFields(t *testing.T) {
 	root, _ := makeManifestTestRoot(t)
 
@@ -253,5 +306,43 @@ func TestRun_ManifestSyncAfterDiscovery_MissingRequiredFields(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "language") || !strings.Contains(err.Error(), "runtime") {
 		t.Errorf("error should mention missing fields; got: %v", err)
+	}
+}
+
+// TestRun_ManifestSyncAfterDiscovery_MalformedFrontmatter_Auto verifies that
+// syntactically malformed VISION.md frontmatter in auto mode produces a
+// human-readable error and writes no partial manifest.
+func TestRun_ManifestSyncAfterDiscovery_MalformedFrontmatter_Auto(t *testing.T) {
+	root, planDir := makeManifestTestRoot(t)
+
+	malformedVision := "---\n: invalid: yaml: [\n---\n# Vision\n\n## Project Name\n\nBad App\n"
+
+	oldInvoke := invokeAgent
+	oldTerminal := terminalGateFunc
+	invokeAgent = makeDiscoveryAgentMock(malformedVision)
+	terminalGateFunc = func(_ approval.Mode, _ string, _ io.Writer, _ io.Reader) error { return nil }
+	defer func() {
+		invokeAgent = oldInvoke
+		terminalGateFunc = oldTerminal
+	}()
+
+	opts := Options{
+		ProjectRoot:  root,
+		Out:          io.Discard,
+		In:           strings.NewReader(""),
+		ApprovalMode: "auto",
+	}
+	err := Run(opts)
+	if err == nil {
+		t.Fatal("expected error for malformed VISION.md frontmatter in auto mode, got nil")
+	}
+	// Verify the error is human-readable (contains context about VISION.md).
+	if !strings.Contains(err.Error(), "VISION.md") {
+		t.Errorf("error should reference VISION.md; got: %v", err)
+	}
+	// No partial manifest should be written.
+	manifestPath := filepath.Join(planDir, "manifest.yaml")
+	if _, statErr := os.Stat(manifestPath); !os.IsNotExist(statErr) {
+		t.Error("partial manifest must not be written when frontmatter is malformed")
 	}
 }

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add tests for manifest generation and approval paths (AC: greenfield emit, existing-project no-manifest, rerun cleanup+regeneration, soft/auto malformed-frontmatter error, hard-mode malformed-frontmatter no-crash)
 - feat: Discovery hard-approval UI updated to split view for greenfield projects (VISION.md + manifest.yaml); non-greenfield projects retain single-pane behaviour
 - Integrate manifest.Sync into orchestrator post-Discovery flow: call Sync after Discovery approval in all modes, remove manifest on --fresh and Discovery rerun.
 - feat(manifest): add Sync entry point — writes or removes .doug/plan/manifest.yaml based on VISION.md frontmatter; all-or-nothing atomic write; human-readable validation errors
