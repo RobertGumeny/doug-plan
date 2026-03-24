@@ -83,6 +83,20 @@ Valid values: `SUCCESS`, `FAILURE`, `RETRY`.
 
 `ParseResult` searches for `## Agent Result` as a line heading (preceded by a newline). Inline references to the section name inside the Briefing text are ignored. Stage-specific step templates may mention `## Agent Result` in their briefing prose without triggering a false parse.
 
+## Post-Discovery Manifest Sync
+
+After Discovery approval (in `auto` and `soft` modes), the orchestrator calls `manifest.Sync` to deterministically write or remove `.doug/plan/manifest.yaml` based on the approved `VISION.md`:
+
+- **Greenfield project** (`project_mode: greenfield` in VISION.md frontmatter): validates required fields (`project_mode`, `language`, `runtime`), builds the manifest, and writes it atomically to `.doug/plan/manifest.yaml`. Returns a human-readable error if required fields are missing.
+- **Non-greenfield or no frontmatter**: removes `.doug/plan/manifest.yaml` if it exists (cleans up any stale file).
+
+In `hard` (browser) mode, `BrowserGate` renders a split view with VISION.md on the left and a manifest.yaml preview on the right. The user edits and approves both together; the approved `manifest.yaml` is written directly by `BrowserGate`. `manifest.Sync` is skipped after a hard-mode approval to preserve the user's reviewed version.
+
+`manifest.yaml` is also removed on re-entry:
+
+- `--fresh`: all plan artifacts cleared, manifest removed before Discovery runs.
+- `--rerun Discovery`: Discovery artifact and all subsequent artifacts cleared, manifest removed.
+
 ## Re-entry Modes
 
 | Mode | CLI flag | Effect |

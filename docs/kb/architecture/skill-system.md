@@ -183,7 +183,6 @@ The skill contains expertise on:
 
 - **PRD structure**: goals, non-goals, scope, background, success criteria, deliverables, acceptance criteria — all measurable, with no placeholders.
 - **tasks.yaml structure**: per-task `id`, `type`, `status`, `description`, `acceptance_criteria`. `id` values must match the epic definition exactly; `type` is one of `feature`, `fix`, `refactor`, `docs`, `test`, `chore`; `status` is always `"TODO"`.
-- **Greenfield manifest**: if `VISION.md` describes a new creation with no references to existing codebases or migrations, a `manifest.yaml` is emitted alongside the artifacts with fields: `project`, `generated`, `greenfield`, `stack`, `build_system`, `dependencies`.
 - **Review gate**: presents PRD and tasks.yaml in full and asks the user to confirm before writing output.
 
 ---

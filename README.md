@@ -119,7 +119,7 @@ Handoff  →  PRD.md + tasks.yaml   (deterministic, no agent)
 
 ### Stage details
 
-**Discovery** — The agent conducts a structured interview and synthesizes answers into `VISION.md`. Sections: Project Name, Problem Statement, Target Users, Goals, Non-Goals, Constraints, Success Criteria, Failure Conditions, Background.
+**Discovery** — The agent conducts a structured interview and synthesizes answers into `VISION.md`. Sections: Project Name, Problem Statement, Target Users, Goals, Non-Goals, Constraints, Success Criteria, Failure Conditions, Background. After Discovery approval, if `VISION.md` declares `project_mode: greenfield` in its frontmatter, `manifest.yaml` is written to `.doug/plan/manifest.yaml` with the stack and dependency information. Non-greenfield projects skip this step.
 
 **Roadmapping** — The agent reads `VISION.md` and produces `ROADMAP.md`, a sequence of 3–8 epics in hybrid Markdown + YAML frontmatter format.
 

@@ -63,23 +63,6 @@ epic:
 
 `id` values must match the epic definition exactly. `type` must be one of: `feature`, `fix`, `refactor`, `docs`, `test`, `chore`. `status` is always `"TODO"`. All string values must be double-quoted.
 
-## Greenfield Projects
-
-If the vision describes a new creation (no references to existing codebases, migrations, rewrites, or legacy integrations), the project is greenfield. For greenfield projects, emit a `manifest.yaml` alongside the other artifacts if one does not yet exist:
-
-```yaml
-project: "<Project Name>"
-generated: "YYYY-MM-DD"
-greenfield: true
-stack:
-  - "<primary language or runtime>"
-build_system: "<primary build tool>"
-dependencies:
-  - "<notable runtime dependency>"
-```
-
-`project` must match the vision document exactly. `stack` lists every language, runtime, and major framework. `build_system` is the conventional tool for the stack if not specified. `dependencies` is an empty list (`[]`) if none are named. No placeholders.
-
 ## Review
 
 Present the PRD and tasks.yaml in full and ask the user to confirm before writing. Do not save until the user has explicitly approved both files.

@@ -17,8 +17,7 @@ The skill will:
 4. Present the draft to the user, apply any corrections, and confirm before writing.
 5. If all defined epics are now handed off, write `.doug/plan/PRD.md` and set `outcome` to `SUCCESS`.
 6. If more defined epics remain, set `outcome` to `RETRY` — the orchestrator will re-invoke this skill for the next epic.
-7. If the project is greenfield and `.doug/plan/manifest.yaml` does not yet exist, emit it on the first invocation that completes a handoff.
-8. Write the outcome into this file's `## Agent Result` block before exiting.
+7. Write the outcome into this file's `## Agent Result` block before exiting.
 
 ---
 
