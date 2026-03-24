@@ -27,7 +27,7 @@ type Options struct {
 	ProjectRoot  string
 	Out          io.Writer
 	In           io.Reader
-	ApprovalMode string // overrides config when non-empty; must be "auto", "soft", or "hard"
+	ApprovalMode string // overrides config when non-empty; must be "auto", "cli", or "browser"
 	RerunStage   string // non-empty triggers re-run mode: clears this stage's artifact and all subsequent
 	Fresh        bool   // true triggers start-fresh mode: clears all plan artifacts
 }
@@ -101,9 +101,9 @@ func Run(opts Options) error {
 			}
 			return err
 		}
-		// In hard mode, BrowserGate already wrote the approved manifest.yaml as the
+		// In browser mode, BrowserGate already wrote the approved manifest.yaml as the
 		// secondary artifact. Skip Sync to preserve the user's approved version.
-		// In auto/soft modes, Sync derives manifest.yaml from the approved VISION.md.
+		// In auto/cli modes, Sync derives manifest.yaml from the approved VISION.md.
 		if stage == state.StageDiscovery && !hardModeUsed {
 			if err := manifest.Sync(opts.ProjectRoot); err != nil {
 				return fmt.Errorf("manifest sync: %w", err)
@@ -196,8 +196,8 @@ func runHandoff(opts Options, plansDir string) error {
 
 // runApprovalGate resolves the approval mode (CLI flag takes precedence over
 // config) and runs the gate for the completed stage.
-// Hard mode opens the browser review UI; auto and soft use terminal gates.
-// Returns true if hard mode was used (so the caller can skip post-approval derives).
+// Browser mode opens the browser review UI; auto and cli use terminal gates.
+// Returns true if browser mode was used (so the caller can skip post-approval derives).
 func runApprovalGate(opts Options, cfg *config.Config, stage state.Stage, plansDir string) (bool, error) {
 	modeStr := cfg.ApprovalMode
 	if opts.ApprovalMode != "" {
@@ -212,7 +212,7 @@ func runApprovalGate(opts Options, cfg *config.Config, stage state.Stage, plansD
 		return false, fmt.Errorf("resolving approval mode: %w", err)
 	}
 
-	if mode == approval.ModeHard {
+	if mode == approval.ModeBrowser {
 		artifactFile := state.ArtifactFile(stage)
 		if artifactFile != "" {
 			primaryPath := filepath.Join(plansDir, artifactFile)

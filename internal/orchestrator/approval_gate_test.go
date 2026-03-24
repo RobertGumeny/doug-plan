@@ -12,7 +12,7 @@ import (
 	"github.com/robertgumeny/doug-plan/internal/state"
 )
 
-func TestRunApprovalGate_HardModeUsesBrowserGate(t *testing.T) {
+func TestRunApprovalGate_BrowserModeUsesBrowserGate(t *testing.T) {
 	plansDir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(plansDir, "PRD.md"), []byte("prd"), 0o644); err != nil {
 		t.Fatalf("write PRD.md: %v", err)
@@ -45,18 +45,18 @@ func TestRunApprovalGate_HardModeUsesBrowserGate(t *testing.T) {
 		terminalGateFunc = oldTerminalGate
 	}()
 
-	hardMode, err := runApprovalGate(Options{}, &config.Config{ApprovalMode: "hard"}, state.StagePRD, plansDir)
+	browserMode, err := runApprovalGate(Options{}, &config.Config{ApprovalMode: "browser"}, state.StagePRD, plansDir)
 	if err != nil {
 		t.Fatalf("runApprovalGate: %v", err)
 	}
-	if !hardMode {
-		t.Fatal("expected hardModeUsed=true for hard approval mode")
+	if !browserMode {
+		t.Fatal("expected hardModeUsed=true for browser approval mode")
 	}
 	if !browserCalled {
 		t.Fatal("expected browser gate to be called")
 	}
 	if terminalCalled {
-		t.Fatal("terminal gate should not be called in hard mode")
+		t.Fatal("terminal gate should not be called in browser mode")
 	}
 	if gotPrimary != filepath.Join(plansDir, "PRD.md") {
 		t.Fatalf("primaryPath = %q", gotPrimary)
@@ -90,8 +90,8 @@ func TestRunApprovalGate_CLIOverrideUsesTerminalGate(t *testing.T) {
 
 	var out bytes.Buffer
 	hardMode, err := runApprovalGate(
-		Options{ApprovalMode: "soft", Out: &out},
-		&config.Config{ApprovalMode: "hard"},
+		Options{ApprovalMode: "cli", Out: &out},
+		&config.Config{ApprovalMode: "browser"},
 		state.StageRoadmapping,
 		t.TempDir(),
 	)
@@ -99,10 +99,10 @@ func TestRunApprovalGate_CLIOverrideUsesTerminalGate(t *testing.T) {
 		t.Fatalf("runApprovalGate: %v", err)
 	}
 	if hardMode {
-		t.Fatal("expected hardModeUsed=false when CLI override is soft")
+		t.Fatal("expected hardModeUsed=false when CLI override is cli")
 	}
-	if gotMode != approval.ModeSoft {
-		t.Fatalf("mode = %q, want %q", gotMode, approval.ModeSoft)
+	if gotMode != approval.ModeCLI {
+		t.Fatalf("mode = %q, want %q", gotMode, approval.ModeCLI)
 	}
 	if gotStage != "Roadmapping" {
 		t.Fatalf("stage = %q, want %q", gotStage, "Roadmapping")
@@ -130,10 +130,10 @@ func TestRunApprovalGate_DefaultsToAutoTerminalGate(t *testing.T) {
 	}
 }
 
-// TestRunApprovalGate_DiscoveryHardModePassesManifestAsSecondary verifies that
-// hard-mode Discovery approval passes manifest.yaml as the secondary artifact and
+// TestRunApprovalGate_DiscoveryBrowserModePassesManifestAsSecondary verifies that
+// browser-mode Discovery approval passes manifest.yaml as the secondary artifact and
 // returns hardModeUsed=true.
-func TestRunApprovalGate_DiscoveryHardModePassesManifestAsSecondary(t *testing.T) {
+func TestRunApprovalGate_DiscoveryBrowserModePassesManifestAsSecondary(t *testing.T) {
 	// Set up a minimal project root so manifest.Sync (best-effort) does not panic.
 	projectRoot := t.TempDir()
 	plansDir := filepath.Join(projectRoot, ".doug", "plan")
@@ -157,7 +157,7 @@ func TestRunApprovalGate_DiscoveryHardModePassesManifestAsSecondary(t *testing.T
 
 	hardMode, err := runApprovalGate(
 		Options{ProjectRoot: projectRoot},
-		&config.Config{ApprovalMode: "hard"},
+		&config.Config{ApprovalMode: "browser"},
 		state.StageDiscovery,
 		plansDir,
 	)
@@ -165,7 +165,7 @@ func TestRunApprovalGate_DiscoveryHardModePassesManifestAsSecondary(t *testing.T
 		t.Fatalf("runApprovalGate: %v", err)
 	}
 	if !hardMode {
-		t.Fatal("expected hardModeUsed=true for hard mode Discovery")
+		t.Fatal("expected hardModeUsed=true for browser mode Discovery")
 	}
 	if gotPrimary != filepath.Join(plansDir, "VISION.md") {
 		t.Fatalf("primaryPath = %q, want VISION.md", gotPrimary)
@@ -179,12 +179,12 @@ func TestRunApprovalGate_DiscoveryHardModePassesManifestAsSecondary(t *testing.T
 	}
 }
 
-// TestRunApprovalGate_DiscoveryHardMode_MalformedFrontmatter_DoesNotCrash
+// TestRunApprovalGate_DiscoveryBrowserMode_MalformedFrontmatter_DoesNotCrash
 // verifies that syntactically malformed VISION.md frontmatter does not cause
-// runApprovalGate to return an error in hard mode. The manifest.Sync call is
+// runApprovalGate to return an error in browser mode. The manifest.Sync call is
 // best-effort; the browser gate must still be invoked so the user can fix
 // VISION.md in the split-view UI.
-func TestRunApprovalGate_DiscoveryHardMode_MalformedFrontmatter_DoesNotCrash(t *testing.T) {
+func TestRunApprovalGate_DiscoveryBrowserMode_MalformedFrontmatter_DoesNotCrash(t *testing.T) {
 	projectRoot := t.TempDir()
 	plansDir := filepath.Join(projectRoot, ".doug", "plan")
 	if err := os.MkdirAll(plansDir, 0o755); err != nil {
@@ -206,12 +206,12 @@ func TestRunApprovalGate_DiscoveryHardMode_MalformedFrontmatter_DoesNotCrash(t *
 
 	hardMode, err := runApprovalGate(
 		Options{ProjectRoot: projectRoot},
-		&config.Config{ApprovalMode: "hard"},
+		&config.Config{ApprovalMode: "browser"},
 		state.StageDiscovery,
 		plansDir,
 	)
 	if err != nil {
-		t.Fatalf("runApprovalGate should not error for malformed frontmatter in hard mode: %v", err)
+		t.Fatalf("runApprovalGate should not error for malformed frontmatter in browser mode: %v", err)
 	}
 	if !hardMode {
 		t.Fatal("expected hardModeUsed=true")

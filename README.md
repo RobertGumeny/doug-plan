@@ -81,8 +81,8 @@ approval_mode: auto
 | Mode | Behavior |
 | ---- | -------- |
 | `auto` | Advance immediately with no prompt |
-| `soft` | Print summary in terminal; press Enter to advance or type `skip` to stop |
-| `hard` | Open a browser review UI; block until you click Approve |
+| `cli` | Print summary in terminal; press Enter to advance or type `skip` to stop |
+| `browser` | Open a browser review UI; block until you click Approve |
 
 ### 3. Run the pipeline
 
@@ -148,7 +148,7 @@ doug-plan run --fresh
 Override the config-file setting for a single run:
 
 ```bash
-doug-plan run --approval hard
+doug-plan run --approval browser
 ```
 
 ---
@@ -160,7 +160,7 @@ doug-plan init [flags]
   --agents string   comma-separated list of agents (claude, codex, gemini)
 
 doug-plan run [flags]
-  --approval string   approval mode override: auto, soft, or hard
+  --approval string   approval mode override: auto, cli, or browser
   --rerun   string    re-run from stage: Discovery, Roadmapping, Definition, PRD, or Tasks
   --fresh             clear all plan artifacts and begin at Discovery
 ```

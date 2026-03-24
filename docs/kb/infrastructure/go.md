@@ -41,7 +41,7 @@ doug-plan/
 │   ├── config/         # Config struct, Load, AgentCommand — reads .doug/plan/doug-plan.yaml
 │   ├── orchestrator/   # Run(Options) — full pipeline loop
 │   ├── agent/          # WriteStep, Invoke, ParseResult, ArchiveStep, Outcome type
-│   ├── approval/       # Gate (auto/soft/hard), BrowserGate, Parse, ErrSkipped
+│   ├── approval/       # Gate (auto/cli/browser), BrowserGate, Parse, ErrSkipped
 │   ├── server/         # Embedded HTTP server for browser review (Serve)
 │   ├── ui/             # Bundle embed.FS — compiled React bundle (bundle.html)
 │   ├── state/          # Stage type, InferStage, ArtifactFile, ClearArtifacts*, StageFromString

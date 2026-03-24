@@ -298,7 +298,7 @@ func TestRun_ManifestSyncAfterDiscovery_MissingRequiredFields(t *testing.T) {
 		ProjectRoot:  root,
 		Out:          io.Discard,
 		In:           strings.NewReader(""),
-		ApprovalMode: "soft",
+		ApprovalMode: "cli",
 	}
 	err := Run(opts)
 	if err == nil {

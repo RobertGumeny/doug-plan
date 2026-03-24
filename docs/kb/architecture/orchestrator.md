@@ -85,12 +85,12 @@ Valid values: `SUCCESS`, `FAILURE`, `RETRY`.
 
 ## Post-Discovery Manifest Sync
 
-After Discovery approval (in `auto` and `soft` modes), the orchestrator calls `manifest.Sync` to deterministically write or remove `.doug/plan/manifest.yaml` based on the approved `VISION.md`:
+After Discovery approval (in `auto` and `cli` modes), the orchestrator calls `manifest.Sync` to deterministically write or remove `.doug/plan/manifest.yaml` based on the approved `VISION.md`:
 
 - **Greenfield project** (`project_mode: greenfield` in VISION.md frontmatter): validates required fields (`project_mode`, `language`, `runtime`), builds the manifest, and writes it atomically to `.doug/plan/manifest.yaml`. Returns a human-readable error if required fields are missing.
 - **Non-greenfield or no frontmatter**: removes `.doug/plan/manifest.yaml` if it exists (cleans up any stale file).
 
-In `hard` (browser) mode, `BrowserGate` renders a split view with VISION.md on the left and a manifest.yaml preview on the right. The user edits and approves both together; the approved `manifest.yaml` is written directly by `BrowserGate`. `manifest.Sync` is skipped after a hard-mode approval to preserve the user's reviewed version.
+In `browser` mode, `BrowserGate` renders a split view with VISION.md on the left and a manifest.yaml preview on the right. The user edits and approves both together; the approved `manifest.yaml` is written directly by `BrowserGate`. `manifest.Sync` is skipped after a browser-mode approval to preserve the user's reviewed version.
 
 `manifest.yaml` is also removed on re-entry:
 
@@ -114,12 +114,12 @@ After a successful step, the gate runs before the pipeline can advance.
 | Mode | Behavior |
 | ---- | -------- |
 | `auto` (default) | Returns immediately with no prompt |
-| `soft` | Prints summary; Enter to advance, `skip` to stop |
-| `hard` | Opens browser review UI; blocks until user clicks Approve |
+| `cli` | Prints summary; Enter to advance, `skip` to stop |
+| `browser` | Opens browser review UI; blocks until user clicks Approve |
 
-In `hard` mode the orchestrator calls `approval.BrowserGate`, which starts an embedded HTTP server, opens the browser, and blocks until `POST /approve` is received. The approved content is written back to disk before the pipeline advances. See [Browser UI](browser-ui.md) for the full flow.
+In `browser` mode the orchestrator calls `approval.BrowserGate`, which starts an embedded HTTP server, opens the browser, and blocks until `POST /approve` is received. The approved content is written back to disk before the pipeline advances. See [Browser UI](browser-ui.md) for the full flow.
 
-In `soft` mode, when the user types `skip`, `approval.Gate` returns `approval.ErrSkipped`. The orchestrator checks for this error and returns `nil` (no error, pipeline just stops).
+In `cli` mode, when the user types `skip`, `approval.Gate` returns `approval.ErrSkipped`. The orchestrator checks for this error and returns `nil` (no error, pipeline just stops).
 
 Approval mode is resolved with CLI flag taking precedence over config:
 
@@ -135,7 +135,7 @@ CLI --approval flag  →  cfg.ApprovalMode  →  "auto"
 | --- | ---- | ------- |
 | `agent` | string | Named agent: `claude`, `codex`, or `gemini` |
 | `command` | []string | Full command override (takes precedence over `agent`) |
-| `approval_mode` | string | Default approval mode (`auto`, `soft`, `hard`) |
+| `approval_mode` | string | Default approval mode (`auto`, `cli`, `browser`) |
 | `skill_paths` | []string | Paths to skill directories (reserved for future use) |
 
 When `command` is set, it is used verbatim. When only `agent` is set, a default command is derived:
@@ -153,7 +153,7 @@ Unknown agents with no `command` set return an error.
 doug-plan run [flags]
 
 Flags:
-  --approval string   approval mode override: auto, soft, or hard
+  --approval string   approval mode override: auto, cli, or browser
   --rerun   string    re-run from stage: Discovery, Roadmapping, Definition, PRD, or Tasks
   --fresh             start fresh: clear all plan artifacts and begin at Discovery
 ```

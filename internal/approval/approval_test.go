@@ -14,11 +14,11 @@ func TestParse(t *testing.T) {
 		wantErr bool
 	}{
 		{"auto", ModeAuto, false},
-		{"soft", ModeSoft, false},
-		{"hard", ModeHard, false},
+		{"cli", ModeCLI, false},
+		{"browser", ModeBrowser, false},
 		{"AUTO", ModeAuto, false},
-		{"SOFT", ModeSoft, false},
-		{"HARD", ModeHard, false},
+		{"CLI", ModeCLI, false},
+		{"BROWSER", ModeBrowser, false},
 		{"", "", true},
 		{"manual", "", true},
 		{"full", "", true},
@@ -47,66 +47,66 @@ func TestGate_Auto(t *testing.T) {
 	}
 }
 
-func TestGate_Soft_Advance(t *testing.T) {
+func TestGate_CLI_Advance(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("\n")
-	if err := Gate(ModeSoft, "Discovery", &out, in); err != nil {
-		t.Fatalf("Gate(soft, Enter) returned error: %v", err)
+	if err := Gate(ModeCLI, "Discovery", &out, in); err != nil {
+		t.Fatalf("Gate(cli, Enter) returned error: %v", err)
 	}
 }
 
-func TestGate_Soft_Skip(t *testing.T) {
+func TestGate_CLI_Skip(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("skip\n")
-	err := Gate(ModeSoft, "Discovery", &out, in)
+	err := Gate(ModeCLI, "Discovery", &out, in)
 	if !errors.Is(err, ErrSkipped) {
-		t.Fatalf("Gate(soft, skip) = %v, want ErrSkipped", err)
+		t.Fatalf("Gate(cli, skip) = %v, want ErrSkipped", err)
 	}
 }
 
-func TestGate_Soft_SkipCaseInsensitive(t *testing.T) {
+func TestGate_CLI_SkipCaseInsensitive(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("SKIP\n")
-	err := Gate(ModeSoft, "Discovery", &out, in)
+	err := Gate(ModeCLI, "Discovery", &out, in)
 	if !errors.Is(err, ErrSkipped) {
-		t.Fatalf("Gate(soft, SKIP) = %v, want ErrSkipped", err)
+		t.Fatalf("Gate(cli, SKIP) = %v, want ErrSkipped", err)
 	}
 }
 
-func TestGate_Hard_Confirm(t *testing.T) {
+func TestGate_Browser_Confirm(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("yes\n")
-	if err := Gate(ModeHard, "Roadmapping", &out, in); err != nil {
-		t.Fatalf("Gate(hard, yes) returned error: %v", err)
+	if err := Gate(ModeBrowser, "Roadmapping", &out, in); err != nil {
+		t.Fatalf("Gate(browser, yes) returned error: %v", err)
 	}
 }
 
-func TestGate_Hard_ConfirmCaseInsensitive(t *testing.T) {
+func TestGate_Browser_ConfirmCaseInsensitive(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("YES\n")
-	if err := Gate(ModeHard, "Roadmapping", &out, in); err != nil {
-		t.Fatalf("Gate(hard, YES) returned error: %v", err)
+	if err := Gate(ModeBrowser, "Roadmapping", &out, in); err != nil {
+		t.Fatalf("Gate(browser, YES) returned error: %v", err)
 	}
 }
 
-func TestGate_Hard_RequiresYes(t *testing.T) {
+func TestGate_Browser_RequiresYes(t *testing.T) {
 	var out bytes.Buffer
 	// First line is not "yes", second line is EOF — should error
 	in := strings.NewReader("no\n")
-	err := Gate(ModeHard, "Roadmapping", &out, in)
+	err := Gate(ModeBrowser, "Roadmapping", &out, in)
 	if err == nil {
-		t.Fatal("Gate(hard, no+EOF) expected error, got nil")
+		t.Fatal("Gate(browser, no+EOF) expected error, got nil")
 	}
 	if errors.Is(err, ErrSkipped) {
-		t.Fatal("Gate(hard) should not return ErrSkipped")
+		t.Fatal("Gate(browser) should not return ErrSkipped")
 	}
 }
 
-func TestGate_Hard_RetriesUntilYes(t *testing.T) {
+func TestGate_Browser_RetriesUntilYes(t *testing.T) {
 	var out bytes.Buffer
 	in := strings.NewReader("no\nmaybe\nyes\n")
-	if err := Gate(ModeHard, "PRD", &out, in); err != nil {
-		t.Fatalf("Gate(hard, no/maybe/yes) returned error: %v", err)
+	if err := Gate(ModeBrowser, "PRD", &out, in); err != nil {
+		t.Fatalf("Gate(browser, no/maybe/yes) returned error: %v", err)
 	}
 }
 

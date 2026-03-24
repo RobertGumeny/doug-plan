@@ -24,7 +24,7 @@ This document describes the `doug-plan` system for first-time contributors. It c
 │  3. agent.Invoke       → run agent subprocess                    │
 │  4. agent.ParseResult  → read outcome from ACTIVE_STEP.md       │
 │  5. agent.ArchiveStep  → move ACTIVE_STEP.md to logs/           │
-│  6. approval.Gate      → human review (auto/soft/hard)          │
+│  6. approval.Gate      → human review (auto/cli/browser)        │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -59,7 +59,7 @@ doug-plan/
     ├── orchestrator/          # Run(Options) — wires the full pipeline loop
     ├── state/                 # Stage type, InferStage, ArtifactFile, ClearArtifacts*, StageFromString, validators
     ├── agent/                 # WriteStep, Invoke, ParseResult, ArchiveStep, Outcome type
-    ├── approval/              # Mode type, Parse, Gate (auto/soft/hard), BrowserGate, ErrSkipped
+    ├── approval/              # Mode type, Parse, Gate (auto/cli/browser), BrowserGate, ErrSkipped
     ├── config/                # Config struct, Load, AgentCommand — reads doug-plan.yaml
     ├── scaffold/              # scaffold.Run — creates .doug/plan/, AGENTS.md, skill dirs
     ├── server/                # Embedded HTTP server for browser review (Serve)
@@ -126,7 +126,7 @@ outcome: "SUCCESS"
 
 ```yaml
 agent: claude          # claude, codex, or gemini
-approval_mode: auto    # auto, soft, or hard
+approval_mode: auto    # auto, cli, or browser
 # command: [...]       # full command override; takes precedence over agent
 ```
 
@@ -147,10 +147,10 @@ After each `SUCCESS` outcome the orchestrator runs an approval gate before advan
 | Mode | Behavior |
 | ---- | -------- |
 | `auto` | Returns immediately; no interaction |
-| `soft` | Prints summary; Enter to advance, `skip` to stop (returns `ErrSkipped`) |
-| `hard` | Opens browser review UI; blocks until user clicks Approve |
+| `cli` | Prints summary; Enter to advance, `skip` to stop (returns `ErrSkipped`) |
+| `browser` | Opens browser review UI; blocks until user clicks Approve |
 
-In `hard` mode `approval.BrowserGate` delegates to `server.Serve`:
+In `browser` mode `approval.BrowserGate` delegates to `server.Serve`:
 
 ```
 server.Serve starts HTTP listener on 127.0.0.1:<random-port>

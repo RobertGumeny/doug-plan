@@ -12,7 +12,7 @@ related_articles:
 
 ## Overview
 
-EPIC-5 replaces the terminal hard-approval gate with a purpose-built browser review experience. When approval mode is `hard`, the orchestrator starts an embedded HTTP server, opens the browser, serves a compiled React bundle, and blocks until the user approves. The approved (possibly edited) content is written back to disk; then the server shuts down and the pipeline advances.
+EPIC-5 replaces the terminal browser-approval gate with a purpose-built browser review experience. When approval mode is `browser`, the orchestrator starts an embedded HTTP server, opens the browser, serves a compiled React bundle, and blocks until the user approves. The approved (possibly edited) content is written back to disk; then the server shuts down and the pipeline advances.
 
 The server spins up **per review step only** — it is not a persistent background process.
 
@@ -44,16 +44,16 @@ POST /approve {content, secondaryContent}
 server.Shutdown → BrowserGate returns nil → pipeline advances
 ```
 
-## Hard Mode Dispatch (Orchestrator)
+## Browser Mode Dispatch (Orchestrator)
 
 `runApprovalGate` in `internal/orchestrator` routes to `BrowserGate` only when:
-- mode is `hard`, AND
+- mode is `browser`, AND
 - `state.ArtifactFile(stage)` returns a non-empty filename.
 
 For the PRD stage, `tasks.yaml` is passed as `secondaryPath` when present. For the Discovery stage, `manifest.Sync` is called first to pre-render a manifest draft; the manifest path is always passed as `secondaryPath` (the UI handles the case where the file does not yet exist).
 
 ```go
-if mode == approval.ModeHard {
+if mode == approval.ModeBrowser {
     artifactFile := state.ArtifactFile(stage)
     if artifactFile != "" {
         primaryPath := filepath.Join(plansDir, artifactFile)
@@ -75,7 +75,7 @@ if mode == approval.ModeHard {
 }
 ```
 
-`auto` and `soft` modes still use the terminal gate unchanged.
+`auto` and `cli` modes still use the terminal gate unchanged.
 
 ## HTTP API
 
@@ -95,7 +95,7 @@ Views are rendered based on the `stage` field returned by `GET /artifact`:
 
 | Stage | View | Description |
 | ----- | ---- | ----------- |
-| `Discovery` | `VisionView` | Single textarea for `VISION.md`; shows `manifest.yaml` split panel for greenfield projects (hard mode) |
+| `Discovery` | `VisionView` | Single textarea for `VISION.md`; shows `manifest.yaml` split panel for greenfield projects (browser mode) |
 | `Roadmapping` | `RoadmapView` | Epic card list with editable title, description, reordering |
 | `Definition` | `DefinitionView` | Task list with guided fields per task |
 | `PRD` | `PRDView` | Split prose textarea and structured task list |
