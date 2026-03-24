@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"io"
 	"os"
 
+	"github.com/robertgumeny/doug-plan/internal/prompt"
 	"github.com/robertgumeny/doug-plan/internal/scaffold"
 	"github.com/spf13/cobra"
 )
@@ -17,12 +19,31 @@ var initCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		selectedAgents, err := resolveAgents(agents, os.Stdout, os.Stdin, prompt.IsTTY(os.Stdin))
+		if err != nil {
+			return err
+		}
 		return scaffold.Run(scaffold.Options{
 			ProjectRoot: cwd,
-			Agents:      scaffold.ParseAgents(agents),
+			Agents:      selectedAgents,
 			Out:         os.Stdout,
 		})
 	},
+}
+
+// resolveAgents returns agents from the --agents flag if set, or prompts the
+// user interactively on a TTY. When isTTY is false and no flag is provided it
+// silently returns the default provider (claude).
+func resolveAgents(flagVal string, w io.Writer, r io.Reader, isTTY bool) ([]string, error) {
+	if flagVal != "" {
+		return scaffold.ParseAgents(flagVal), nil
+	}
+	providers := []string{"claude", "codex", "gemini"}
+	_, choice, err := prompt.SelectOne(w, r, isTTY, "Select a provider:", providers, 0)
+	if err != nil {
+		return nil, err
+	}
+	return []string{choice}, nil
 }
 
 func init() {
