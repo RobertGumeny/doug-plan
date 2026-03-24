@@ -61,6 +61,7 @@ doug-plan/
     ├── agent/                 # WriteStep, Invoke, ParseResult, ArchiveStep, Outcome type
     ├── approval/              # Mode type, Parse, Gate (auto/cli/browser), BrowserGate, ErrSkipped
     ├── config/                # Config struct, Load, AgentCommand — reads doug-plan.yaml
+    ├── prompt/                # SelectOne, Text, IsTTY — reusable interactive prompt helpers
     ├── scaffold/              # scaffold.Run — creates .doug/plan/, AGENTS.md, skill dirs
     ├── server/                # Embedded HTTP server for browser review (Serve)
     ├── ui/                    # Bundle embed.FS — compiled React bundle (bundle.html)
@@ -133,7 +134,7 @@ approval_mode: auto    # auto, cli, or browser
 `config.AgentCommand` derives the subprocess command from `agent` if no `command` is set:
 
 ```
-agent: claude  →  ["claude", "--print", "Please complete..."]
+agent: claude  →  ["claude", "Please complete..."]
 ```
 
 An unknown agent name with no `command` override returns an error.

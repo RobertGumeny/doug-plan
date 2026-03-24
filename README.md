@@ -45,7 +45,13 @@ Pre-built binaries for macOS (arm64, amd64) and Linux (amd64) are available on t
 
 ### 1. Initialize a project
 
-Run `init` inside any project directory. Pass the agents you want to use with `--agents`:
+Run `init` inside any project directory. On a TTY, `init` displays a numbered provider selection menu:
+
+```bash
+doug-plan init
+```
+
+Pass `--agents` to skip the prompt and specify providers directly:
 
 ```bash
 doug-plan init --agents claude
@@ -56,6 +62,8 @@ Supported agents: `claude`, `codex`, `gemini`. Comma-separate multiple agents:
 ```bash
 doug-plan init --agents claude,codex
 ```
+
+When stdin is not a TTY (e.g. in CI or a piped script), `init` defaults to `claude` silently without error.
 
 `init` creates:
 

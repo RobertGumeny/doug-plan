@@ -141,7 +141,7 @@ CLI --approval flag  →  cfg.ApprovalMode  →  "auto"
 When `command` is set, it is used verbatim. When only `agent` is set, a default command is derived:
 
 ```yaml
-# Equivalent to: command: ["claude", "--print", "Please complete..."]
+# Equivalent to: command: ["claude", "Please complete..."]
 agent: claude
 ```
 
