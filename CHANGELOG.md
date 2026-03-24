@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- feat: add internal/prompt package with SelectOne and Text helpers; TTY/non-TTY paths tested
 - docs: remove stale manifest references from handoff skill and PRD template; document post-Discovery manifest sync in orchestrator.md and README
 - Add tests for manifest generation and approval paths (AC: greenfield emit, existing-project no-manifest, rerun cleanup+regeneration, soft/auto malformed-frontmatter error, hard-mode malformed-frontmatter no-crash)
 - feat: Discovery hard-approval UI updated to split view for greenfield projects (VISION.md + manifest.yaml); non-greenfield projects retain single-pane behaviour
