@@ -39,7 +39,7 @@ func (c *Config) AgentCommand() ([]string, error) {
 	}
 	switch c.Agent {
 	case "claude":
-		return []string{"claude", "--print", "Please complete the step described in .doug/plan/ACTIVE_STEP.md"}, nil
+		return []string{"claude", "Please complete the step described in .doug/plan/ACTIVE_STEP.md"}, nil
 	case "codex":
 		return []string{"codex", "Please complete the step described in .doug/plan/ACTIVE_STEP.md"}, nil
 	case "gemini":

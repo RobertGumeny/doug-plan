@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Remove --print flag from default Claude agent command so doug-plan run opens an interactive shell session instead of a one-shot output.
 - Add guided provider selection prompt to `doug-plan init` using `prompt.SelectOne`; TTY presents numbered menu, non-TTY silently defaults to claude, `--agents` flag bypasses prompt.
 - feat: add internal/prompt package with SelectOne and Text helpers; TTY/non-TTY paths tested
 - docs: remove stale manifest references from handoff skill and PRD template; document post-Discovery manifest sync in orchestrator.md and README
