@@ -94,13 +94,17 @@ func Run(opts Options) error {
 	switch outcome {
 	case agent.OutcomeSuccess:
 		writef(opts.Out, "Step %s completed successfully.\n", stage)
-		if err := runApprovalGate(opts, cfg, stage, plansDir); err != nil {
+		hardModeUsed, err := runApprovalGate(opts, cfg, stage, plansDir)
+		if err != nil {
 			if errors.Is(err, approval.ErrSkipped) {
 				return nil
 			}
 			return err
 		}
-		if stage == state.StageDiscovery {
+		// In hard mode, BrowserGate already wrote the approved manifest.yaml as the
+		// secondary artifact. Skip Sync to preserve the user's approved version.
+		// In auto/soft modes, Sync derives manifest.yaml from the approved VISION.md.
+		if stage == state.StageDiscovery && !hardModeUsed {
 			if err := manifest.Sync(opts.ProjectRoot); err != nil {
 				return fmt.Errorf("manifest sync: %w", err)
 			}
@@ -181,7 +185,7 @@ func runHandoff(opts Options, plansDir string) error {
 		return fmt.Errorf("loading config: %w", err)
 	}
 
-	if err := runApprovalGate(opts, cfg, state.StagePRD, plansDir); err != nil {
+	if _, err := runApprovalGate(opts, cfg, state.StagePRD, plansDir); err != nil {
 		if errors.Is(err, approval.ErrSkipped) {
 			return nil
 		}
@@ -193,7 +197,8 @@ func runHandoff(opts Options, plansDir string) error {
 // runApprovalGate resolves the approval mode (CLI flag takes precedence over
 // config) and runs the gate for the completed stage.
 // Hard mode opens the browser review UI; auto and soft use terminal gates.
-func runApprovalGate(opts Options, cfg *config.Config, stage state.Stage, plansDir string) error {
+// Returns true if hard mode was used (so the caller can skip post-approval derives).
+func runApprovalGate(opts Options, cfg *config.Config, stage state.Stage, plansDir string) (bool, error) {
 	modeStr := cfg.ApprovalMode
 	if opts.ApprovalMode != "" {
 		modeStr = opts.ApprovalMode
@@ -204,7 +209,7 @@ func runApprovalGate(opts Options, cfg *config.Config, stage state.Stage, plansD
 
 	mode, err := approval.Parse(modeStr)
 	if err != nil {
-		return fmt.Errorf("resolving approval mode: %w", err)
+		return false, fmt.Errorf("resolving approval mode: %w", err)
 	}
 
 	if mode == approval.ModeHard {
@@ -218,9 +223,16 @@ func runApprovalGate(opts Options, cfg *config.Config, stage state.Stage, plansD
 					secondaryPath = candidate
 				}
 			}
-			return browserGateFunc(primaryPath, secondaryPath, stage.String(), opts.Out)
+			if stage == state.StageDiscovery {
+				// Pre-render manifest draft so the split view is pre-populated.
+				// Best-effort: if VISION.md frontmatter is invalid the draft is absent
+				// and the UI derives it client-side once the user fixes the frontmatter.
+				_ = manifest.Sync(opts.ProjectRoot)
+				secondaryPath = layout.ManifestPath(opts.ProjectRoot)
+			}
+			return true, browserGateFunc(primaryPath, secondaryPath, stage.String(), opts.Out)
 		}
 	}
 
-	return terminalGateFunc(mode, stage.String(), opts.Out, opts.In)
+	return false, terminalGateFunc(mode, stage.String(), opts.Out, opts.In)
 }

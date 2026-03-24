@@ -45,9 +45,12 @@ func TestRunApprovalGate_HardModeUsesBrowserGate(t *testing.T) {
 		terminalGateFunc = oldTerminalGate
 	}()
 
-	err := runApprovalGate(Options{}, &config.Config{ApprovalMode: "hard"}, state.StagePRD, plansDir)
+	hardMode, err := runApprovalGate(Options{}, &config.Config{ApprovalMode: "hard"}, state.StagePRD, plansDir)
 	if err != nil {
 		t.Fatalf("runApprovalGate: %v", err)
+	}
+	if !hardMode {
+		t.Fatal("expected hardModeUsed=true for hard approval mode")
 	}
 	if !browserCalled {
 		t.Fatal("expected browser gate to be called")
@@ -86,7 +89,7 @@ func TestRunApprovalGate_CLIOverrideUsesTerminalGate(t *testing.T) {
 	}()
 
 	var out bytes.Buffer
-	err := runApprovalGate(
+	hardMode, err := runApprovalGate(
 		Options{ApprovalMode: "soft", Out: &out},
 		&config.Config{ApprovalMode: "hard"},
 		state.StageRoadmapping,
@@ -94,6 +97,9 @@ func TestRunApprovalGate_CLIOverrideUsesTerminalGate(t *testing.T) {
 	)
 	if err != nil {
 		t.Fatalf("runApprovalGate: %v", err)
+	}
+	if hardMode {
+		t.Fatal("expected hardModeUsed=false when CLI override is soft")
 	}
 	if gotMode != approval.ModeSoft {
 		t.Fatalf("mode = %q, want %q", gotMode, approval.ModeSoft)
@@ -118,8 +124,57 @@ func TestRunApprovalGate_DefaultsToAutoTerminalGate(t *testing.T) {
 		terminalGateFunc = oldTerminalGate
 	}()
 
-	err := runApprovalGate(Options{}, &config.Config{}, state.StageDiscovery, t.TempDir())
+	_, err := runApprovalGate(Options{}, &config.Config{}, state.StageDiscovery, t.TempDir())
 	if err != nil {
 		t.Fatalf("runApprovalGate: %v", err)
+	}
+}
+
+// TestRunApprovalGate_DiscoveryHardModePassesManifestAsSecondary verifies that
+// hard-mode Discovery approval passes manifest.yaml as the secondary artifact and
+// returns hardModeUsed=true.
+func TestRunApprovalGate_DiscoveryHardModePassesManifestAsSecondary(t *testing.T) {
+	// Set up a minimal project root so manifest.Sync (best-effort) does not panic.
+	projectRoot := t.TempDir()
+	plansDir := filepath.Join(projectRoot, ".doug", "plan")
+	if err := os.MkdirAll(plansDir, 0o755); err != nil {
+		t.Fatalf("mkdir plansDir: %v", err)
+	}
+	// Write a minimal VISION.md artifact shell so ArtifactFile resolves.
+	if err := os.WriteFile(filepath.Join(plansDir, "VISION.md"), []byte("# Vision\n"), 0o644); err != nil {
+		t.Fatalf("write VISION.md: %v", err)
+	}
+
+	var gotPrimary, gotSecondary, gotStage string
+	oldBrowserGate := browserGateFunc
+	browserGateFunc = func(primaryPath, secondaryPath, stage string, out io.Writer) error {
+		gotPrimary = primaryPath
+		gotSecondary = secondaryPath
+		gotStage = stage
+		return nil
+	}
+	defer func() { browserGateFunc = oldBrowserGate }()
+
+	hardMode, err := runApprovalGate(
+		Options{ProjectRoot: projectRoot},
+		&config.Config{ApprovalMode: "hard"},
+		state.StageDiscovery,
+		plansDir,
+	)
+	if err != nil {
+		t.Fatalf("runApprovalGate: %v", err)
+	}
+	if !hardMode {
+		t.Fatal("expected hardModeUsed=true for hard mode Discovery")
+	}
+	if gotPrimary != filepath.Join(plansDir, "VISION.md") {
+		t.Fatalf("primaryPath = %q, want VISION.md", gotPrimary)
+	}
+	wantSecondary := filepath.Join(plansDir, "manifest.yaml")
+	if gotSecondary != wantSecondary {
+		t.Fatalf("secondaryPath = %q, want %q", gotSecondary, wantSecondary)
+	}
+	if gotStage != "Discovery" {
+		t.Fatalf("stage = %q, want %q", gotStage, "Discovery")
 	}
 }
