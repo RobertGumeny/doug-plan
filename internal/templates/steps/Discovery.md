@@ -26,9 +26,12 @@ Invoke `/discovery` to conduct a guided interview and produce `.doug/plan/VISION
 The skill will:
 
 1. Ingest any research reports from `.doug/plans/research/` (if present).
-2. Ask structured questions to capture the project name, problem statement, target users, goals, non-goals, constraints, success criteria, and background.
-3. Draft `VISION.md`, confirm it with the user, and write it to `.doug/plan/VISION.md`.
-4. Write the outcome into this file's `## Agent Result` block before exiting.
+2. Ask an explicit greenfield vs. existing question to determine `project_mode`.
+3. Ask structured questions to capture the project name, problem statement, target users, goals, non-goals, constraints, success criteria, and background.
+4. **If greenfield**: collect scaffold inputs (language, runtime, framework, package manager, build system, runtime dependencies, dev dependencies, bootstrap constraints) and populate the VISION.md frontmatter accordingly.
+5. **If existing**: leave scaffold frontmatter fields empty — they are not required for existing projects.
+6. Draft `VISION.md` with the appropriate frontmatter and body, confirm it with the user, and write it to `.doug/plan/VISION.md`.
+7. Write the outcome into this file's `## Agent Result` block before exiting.
 
 ---
 

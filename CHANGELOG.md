@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Update Discovery step brief and skill contract to capture machine-readable scaffold inputs for greenfield projects
 - feat: define manifest schema v1 and extend VISION.md template with greenfield frontmatter
 - docs: add README.md and ARCHITECTURE.md for public audience
 - Add artifact validation helpers for all five managed artifacts (VISION.md, ROADMAP.md, DEFINITION.md, PRD.md, tasks.yaml) and update InferStage to treat invalid or incomplete artifacts the same as missing ones; change StageTasks artifact from TASKS.md to tasks.yaml to align with the deterministic handoff output.
