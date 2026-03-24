@@ -12,6 +12,7 @@ import (
 	"github.com/robertgumeny/doug-plan/internal/config"
 	"github.com/robertgumeny/doug-plan/internal/handoff"
 	"github.com/robertgumeny/doug-plan/internal/layout"
+	"github.com/robertgumeny/doug-plan/internal/manifest"
 	"github.com/robertgumeny/doug-plan/internal/state"
 )
 
@@ -99,6 +100,11 @@ func Run(opts Options) error {
 			}
 			return err
 		}
+		if stage == state.StageDiscovery {
+			if err := manifest.Sync(opts.ProjectRoot); err != nil {
+				return fmt.Errorf("manifest sync: %w", err)
+			}
+		}
 	case agent.OutcomeFailure:
 		return fmt.Errorf("step %s failed: agent reported FAILURE", stage)
 	case agent.OutcomeRetry:
@@ -128,6 +134,10 @@ func applyReentry(opts Options, plansDir string) error {
 		if err := state.ClearAllArtifacts(plansDir); err != nil {
 			return fmt.Errorf("clearing artifacts for fresh start: %w", err)
 		}
+		manifestPath := filepath.Join(plansDir, "manifest.yaml")
+		if err := os.Remove(manifestPath); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("clearing manifest for fresh start: %w", err)
+		}
 		writef(opts.Out, "Re-entry: cleared all plan artifacts. Starting at Discovery.\n")
 		return nil
 	}
@@ -138,6 +148,12 @@ func applyReentry(opts Options, plansDir string) error {
 		}
 		if err := state.ClearArtifactsFromStage(plansDir, stage); err != nil {
 			return fmt.Errorf("clearing artifacts for re-run of %s: %w", stage, err)
+		}
+		if stage == state.StageDiscovery {
+			manifestPath := filepath.Join(plansDir, "manifest.yaml")
+			if err := os.Remove(manifestPath); err != nil && !os.IsNotExist(err) {
+				return fmt.Errorf("clearing manifest for Discovery re-run: %w", err)
+			}
 		}
 		writef(opts.Out, "Re-entry: cleared artifacts from %s onwards.\n", stage)
 	}
