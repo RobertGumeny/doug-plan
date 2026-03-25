@@ -49,8 +49,23 @@ func TestResolveAgents_TTY_PromptShownAndSelectionReturned(t *testing.T) {
 	if len(result) != 1 || result[0] != "codex" {
 		t.Errorf("expected [codex], got %v", result)
 	}
-	if !strings.Contains(out.String(), "Select a provider") {
+	if !strings.Contains(out.String(), "Select providers") {
 		t.Errorf("expected prompt in output, got: %s", out.String())
+	}
+}
+
+func TestResolveAgents_TTY_SelectMultipleProviders(t *testing.T) {
+	var out bytes.Buffer
+	// Toggle claude (1) and codex (2), then confirm with empty line.
+	result, err := resolveAgents("", &out, strings.NewReader("1\n2\n\n"), true)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) != 2 {
+		t.Fatalf("expected 2 providers, got %v", result)
+	}
+	if result[0] != "claude" || result[1] != "codex" {
+		t.Errorf("expected [claude codex], got %v", result)
 	}
 }
 

@@ -88,6 +88,108 @@ func TestSelectOne_NonTTY_DefaultIdxOutOfRange_ClampsToZero(t *testing.T) {
 	}
 }
 
+// ---- SelectMulti ----
+
+func TestSelectMulti_NonTTY_ReturnsDefault(t *testing.T) {
+	result, err := SelectMulti(new(bytes.Buffer), strings.NewReader(""), false, "Pick", []string{"a", "b", "c"}, []int{1})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) != 1 || result[0] != "b" {
+		t.Errorf("want [b]; got %v", result)
+	}
+}
+
+func TestSelectMulti_NonTTY_EmptyDefaultIdxs_ReturnsFirst(t *testing.T) {
+	result, err := SelectMulti(new(bytes.Buffer), strings.NewReader(""), false, "Pick", []string{"a", "b"}, []int{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) != 1 || result[0] != "a" {
+		t.Errorf("want [a]; got %v", result)
+	}
+}
+
+func TestSelectMulti_TTY_ToggleAndConfirm(t *testing.T) {
+	var out bytes.Buffer
+	// Toggle item 2 (codex), then confirm with empty line.
+	result, err := SelectMulti(&out, strings.NewReader("2\n\n"), true, "Pick", []string{"claude", "codex", "gemini"}, []int{0})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) != 1 || result[0] != "codex" {
+		t.Errorf("want [codex]; got %v", result)
+	}
+}
+
+func TestSelectMulti_TTY_SelectMultiple(t *testing.T) {
+	result, err := SelectMulti(new(bytes.Buffer), strings.NewReader("1\n2\n\n"), true, "Pick", []string{"claude", "codex", "gemini"}, []int{0})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) != 2 || result[0] != "claude" || result[1] != "codex" {
+		t.Errorf("want [claude codex]; got %v", result)
+	}
+}
+
+func TestSelectMulti_TTY_EmptyInputReturnsDefault(t *testing.T) {
+	result, err := SelectMulti(new(bytes.Buffer), strings.NewReader("\n"), true, "Pick", []string{"a", "b"}, []int{0})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) != 1 || result[0] != "a" {
+		t.Errorf("want [a]; got %v", result)
+	}
+}
+
+func TestSelectMulti_TTY_ToggleOnThenOff(t *testing.T) {
+	// Toggle item 2 on, then off again, then confirm -> falls back to default.
+	result, err := SelectMulti(new(bytes.Buffer), strings.NewReader("2\n2\n\n"), true, "Pick", []string{"a", "b"}, []int{0})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) != 1 || result[0] != "a" {
+		t.Errorf("want [a] (default); got %v", result)
+	}
+}
+
+func TestSelectMulti_TTY_EOFConfirms(t *testing.T) {
+	// Reader EOF after a toggle should confirm with that selection.
+	result, err := SelectMulti(new(bytes.Buffer), strings.NewReader("2\n"), true, "Pick", []string{"a", "b", "c"}, []int{0})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) != 1 || result[0] != "b" {
+		t.Errorf("want [b]; got %v", result)
+	}
+}
+
+func TestSelectMulti_TTY_OutOfRangeIgnored(t *testing.T) {
+	result, err := SelectMulti(new(bytes.Buffer), strings.NewReader("99\n\n"), true, "Pick", []string{"a", "b"}, []int{0})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// No valid toggle -> falls back to default.
+	if len(result) != 1 || result[0] != "a" {
+		t.Errorf("want [a]; got %v", result)
+	}
+}
+
+func TestSelectMulti_EmptyOptions_ReturnsError(t *testing.T) {
+	_, err := SelectMulti(new(bytes.Buffer), strings.NewReader(""), true, "Pick", []string{}, []int{})
+	if err == nil {
+		t.Fatal("expected error for empty options")
+	}
+}
+
+func TestSelectMulti_TTY_QuestionShownInOutput(t *testing.T) {
+	var out bytes.Buffer
+	SelectMulti(&out, strings.NewReader("\n"), true, "Choose providers", []string{"a", "b"}, []int{0})
+	if !strings.Contains(out.String(), "Choose providers") {
+		t.Errorf("expected question in output; got: %s", out.String())
+	}
+}
+
 // ---- Text ----
 
 func TestText_NonTTY_ReturnsDefault(t *testing.T) {

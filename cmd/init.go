@@ -39,11 +39,7 @@ func resolveAgents(flagVal string, w io.Writer, r io.Reader, isTTY bool) ([]stri
 		return scaffold.ParseAgents(flagVal), nil
 	}
 	providers := []string{"claude", "codex", "gemini"}
-	_, choice, err := prompt.SelectOne(w, r, isTTY, "Select a provider:", providers, 0)
-	if err != nil {
-		return nil, err
-	}
-	return []string{choice}, nil
+	return prompt.SelectMulti(w, r, isTTY, "Select providers (toggle number, Enter to confirm):", providers, []int{0})
 }
 
 func init() {

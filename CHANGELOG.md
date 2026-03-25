@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add SelectMulti prompt helper and wire it into resolveAgents for multi-agent interactive init
 - Add session-completion instruction to all step templates and the generic fallback, directing agents to inform the user the step is complete and to exit and run `doug-plan run`.
 - Harden outcome parser to normalize to uppercase before validation; add valid-values comment to all step templates and generic fallback.
 - feat: hard-rename approval modes soft→cli and hard→browser across all code, config, CLI help, tests, and documentation
