@@ -66,7 +66,7 @@ func parseOutcome(content string) (Outcome, error) {
 		return "", fmt.Errorf("parsing Agent Result frontmatter: %w", err)
 	}
 
-	outcome := Outcome(strings.TrimSpace(result.Outcome))
+	outcome := Outcome(strings.ToUpper(strings.TrimSpace(result.Outcome)))
 	switch outcome {
 	case OutcomeSuccess, OutcomeFailure, OutcomeRetry:
 		return outcome, nil

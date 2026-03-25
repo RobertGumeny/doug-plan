@@ -54,7 +54,7 @@ Execute the %s step of the pipeline and produce its output artifact.
 ## Agent Result
 
 ---
-outcome: ""
+outcome: "" # Must be one of: SUCCESS | FAILURE | RETRY
 ---
 
 ## Output

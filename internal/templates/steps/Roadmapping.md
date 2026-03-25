@@ -32,7 +32,7 @@ The skill will:
 ## Agent Result
 
 ---
-outcome: ""
+outcome: "" # Must be one of: SUCCESS | FAILURE | RETRY
 ---
 
 ## Output
