@@ -12,7 +12,7 @@ This document describes the `doug-plan` system for first-time contributors. It c
 ┌─────────────────────────────────────────────────────────────────┐
 │  CLI (cmd/)                                                      │
 │    init → scaffold.Run                                           │
-│    run  → orchestrator.Run (loops until complete or blocked)     │
+│    run  → orchestrator.Run (executes one step, then exits)       │
 └────────────────────────┬────────────────────────────────────────┘
                          │
                          ▼
@@ -56,7 +56,7 @@ doug-plan/
 │   ├── init.go                # init subcommand → scaffold.Run
 │   └── run.go                 # run subcommand → orchestrator.Run; --approval, --rerun, --fresh flags
 └── internal/
-    ├── orchestrator/          # Run(Options) — wires the full pipeline loop
+    ├── orchestrator/          # Run(Options) — executes one pipeline step per call
     ├── state/                 # Stage type, InferStage, ArtifactFile, ClearArtifacts*, StageFromString, validators
     ├── agent/                 # WriteStep, Invoke, ParseResult, ArchiveStep, Outcome type
     ├── approval/              # Mode type, Parse, Gate (auto/cli/browser), BrowserGate, ErrSkipped
@@ -78,7 +78,7 @@ doug-plan/
 
 ## Orchestrator Loop
 
-`orchestrator.Run` drives one pipeline step per call. The caller (the CLI or a test harness) loops by calling `Run` repeatedly:
+`orchestrator.Run` drives one pipeline step per call. `doug-plan run` invokes it once, returns, and a later `doug-plan run` continues from the next inferred stage:
 
 ```
 Run called
@@ -253,7 +253,7 @@ The first three are portable expertise modules: they contain no host-specific fi
 
 **Artifact-derived position**: No separate state file. Pipeline position is always inferred from which artifacts are on disk and whether they are valid. This makes the state model simple and resilient — any time you re-run, the correct stage is inferred automatically.
 
-**One step per `Run` call**: `orchestrator.Run` executes exactly one pipeline step. The CLI drives the loop. This makes the orchestrator straightforward to test: give it a fake agent, call `Run`, inspect which artifact was written.
+**One step per `Run` call**: `orchestrator.Run` executes exactly one pipeline step and then returns. The user-facing loop is re-entry-based: each `doug-plan run` call resumes from the next inferred stage. This makes the orchestrator straightforward to test: give it a fake agent, call `Run`, inspect which artifact was written.
 
 **Atomic file writes**: All file writes go to `<path>.tmp` first, then `os.Rename` to the final path. Prevents partial writes from corrupting artifacts if the process is killed mid-write.
 

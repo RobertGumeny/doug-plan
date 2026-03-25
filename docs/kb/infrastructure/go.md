@@ -39,7 +39,7 @@ doug-plan/
 │   ├── layout/         # Shared path helpers for .doug/plan-owned files (PlanDir, ProjectYAMLPath, etc.)
 │   ├── scaffold/       # scaffold.Run() — creates .doug/plan/, AGENTS.md, CLAUDE.md, .doug/project.yaml, and agent skill dirs
 │   ├── config/         # Config struct, Load, AgentCommand — reads .doug/plan/doug-plan.yaml
-│   ├── orchestrator/   # Run(Options) — full pipeline loop
+│   ├── orchestrator/   # Run(Options) — one pipeline step per call
 │   ├── agent/          # WriteStep, Invoke, ParseResult, ArchiveStep, Outcome type
 │   ├── approval/       # Gate (auto/cli/browser), BrowserGate, Parse, ErrSkipped
 │   ├── prompt/         # SelectOne, SelectMulti, Text — TTY-aware prompt helpers

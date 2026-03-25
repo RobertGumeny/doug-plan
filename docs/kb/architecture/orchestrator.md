@@ -13,7 +13,7 @@ related_articles:
 
 ## Overview
 
-The core orchestrator loop drives the four-stage planning pipeline. Pipeline position is always inferred from artifacts on disk — no separate state file is needed.
+The orchestrator advances the four-stage planning pipeline one step at a time. Pipeline position is always inferred from artifacts on disk — no separate state file is needed.
 
 ## Pipeline Stages
 
@@ -31,7 +31,7 @@ Stages are ordered. Each stage produces one artifact in `.doug/plan/`. A stage i
 
 ## Run Loop (`internal/orchestrator`)
 
-Each call to `orchestrator.Run` executes one pipeline step:
+Each call to `orchestrator.Run` executes one pipeline step and then returns. A later `doug-plan run` call resumes from the next inferred stage:
 
 1. **Re-entry**: Apply `--fresh` or `--rerun` to clear artifacts (see Re-entry Modes below).
 2. **Infer stage**: `state.InferStage` reads `.doug/plan/` and returns the current stage.
