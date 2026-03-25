@@ -49,6 +49,8 @@ func stepContent(stage state.Stage) string {
 
 Execute the %s step of the pipeline and produce its output artifact.
 
+After completing the step, write the outcome into the `+"`"+`## Agent Result`+"`"+` block below, then tell the user the step is complete and that they should exit this session and run `+"`"+`doug-plan run`+"`"+` to continue.
+
 ---
 
 ## Agent Result
@@ -58,6 +60,12 @@ outcome: "" # Must be one of: SUCCESS | FAILURE | RETRY
 ---
 
 ## Output
+
+## Session Completion
+
+After writing the outcome into the `+"`"+`## Agent Result`+"`"+` block, send the user this message:
+
+> This step is complete. Please exit this session and run `+"`"+`doug-plan run`+"`"+` to continue.
 `, stage, stage)
 }
 

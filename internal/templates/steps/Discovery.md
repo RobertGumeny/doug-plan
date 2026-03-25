@@ -32,6 +32,7 @@ The skill will:
 5. **If existing**: leave scaffold frontmatter fields empty — they are not required for existing projects.
 6. Draft `VISION.md` with the appropriate frontmatter and body, confirm it with the user, and write it to `.doug/plan/VISION.md`.
 7. Write the outcome into this file's `## Agent Result` block before exiting.
+8. Tell the user the step is complete and that they should exit this session and run `doug-plan run` to continue.
 
 ---
 
@@ -42,3 +43,9 @@ outcome: "" # Must be one of: SUCCESS | FAILURE | RETRY
 ---
 
 ## Output
+
+## Session Completion
+
+After writing the outcome into the `## Agent Result` block, send the user this message:
+
+> This step is complete. Please exit this session and run `doug-plan run` to continue.

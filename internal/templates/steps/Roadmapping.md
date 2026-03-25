@@ -26,6 +26,7 @@ The skill will:
 2. Synthesize a minimal set of sequenced epics derived from the vision goals, non-goals, and constraints (aim for 3–8 epics).
 3. Draft `ROADMAP.md` in hybrid Markdown + YAML frontmatter format, confirm it with the user, and write it to `.doug/plan/ROADMAP.md`.
 4. Write the outcome into this file's `## Agent Result` block before exiting.
+5. Tell the user the step is complete and that they should exit this session and run `doug-plan run` to continue.
 
 ---
 
@@ -36,3 +37,9 @@ outcome: "" # Must be one of: SUCCESS | FAILURE | RETRY
 ---
 
 ## Output
+
+## Session Completion
+
+After writing the outcome into the `## Agent Result` block, send the user this message:
+
+> This step is complete. Please exit this session and run `doug-plan run` to continue.

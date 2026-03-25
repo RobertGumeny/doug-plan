@@ -43,6 +43,7 @@ The skill will:
 5. If all epics are now defined, write `.doug/plan/DEFINITION.md` and set `outcome` to `SUCCESS`.
 6. If more epics remain, set `outcome` to `RETRY` — the orchestrator will re-invoke this skill for the next epic.
 7. Write the outcome into this file's `## Agent Result` block before exiting.
+8. Tell the user the step is complete and that they should exit this session and run `doug-plan run` to continue.
 
 ---
 
@@ -53,3 +54,9 @@ outcome: "" # Must be one of: SUCCESS | FAILURE | RETRY
 ---
 
 ## Output
+
+## Session Completion
+
+After writing the outcome into the `## Agent Result` block, send the user this message:
+
+> This step is complete. Please exit this session and run `doug-plan run` to continue.
