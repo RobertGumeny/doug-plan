@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Fixed
+
+### Removed
+
+## [0.1.2]
+
+### Added
 - feat: introduce .doug/project.yaml as canonical project ID store; inject DOUG_PROJECT_ID into AGENTS.md managed block idempotently on doug-plan init
 - Add SelectMulti prompt helper and wire it into resolveAgents for multi-agent interactive init
 - Add session-completion instruction to all step templates and the generic fallback, directing agents to inform the user the step is complete and to exit and run `doug-plan run`.
