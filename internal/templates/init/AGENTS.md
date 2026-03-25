@@ -1,4 +1,6 @@
 <!-- DOUG-PLAN-SPECIFIC-INSTRUCTIONS:START -->
+DOUG_PROJECT_ID: {{DOUG_PROJECT_ID}}
+
 ## Doug-Plan Instructions
 
 This section is managed by `doug-plan`. Keep repository-specific planning rules here, and keep skill files focused on their workflow.

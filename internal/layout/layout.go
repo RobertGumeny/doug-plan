@@ -35,3 +35,7 @@ func EpicsDir(projectRoot string) string {
 func ManifestPath(projectRoot string) string {
 	return filepath.Join(PlanDir(projectRoot), "manifest.yaml")
 }
+
+func ProjectYAMLPath(projectRoot string) string {
+	return filepath.Join(DougDir(projectRoot), "project.yaml")
+}

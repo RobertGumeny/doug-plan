@@ -280,6 +280,136 @@ func TestRun_AllowsExistingDougDirWithoutPlanConfig(t *testing.T) {
 	}
 }
 
+func TestRun_CreatesProjectYAML(t *testing.T) {
+	dir := t.TempDir()
+	if err := scaffold.Run(scaffold.Options{ProjectRoot: dir, Agents: []string{"claude"}, Out: new(strings.Builder)}); err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(dir, ".doug", "project.yaml"))
+	if err != nil {
+		t.Fatalf("project.yaml not created: %v", err)
+	}
+	if !strings.Contains(string(data), "project_id:") {
+		t.Errorf("project.yaml missing project_id field, got: %q", string(data))
+	}
+}
+
+func TestRun_AgentsMDContainsDougProjectID(t *testing.T) {
+	dir := t.TempDir()
+	if err := scaffold.Run(scaffold.Options{ProjectRoot: dir, Agents: []string{"claude"}, Out: new(strings.Builder)}); err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	agents, err := os.ReadFile(filepath.Join(dir, "AGENTS.md"))
+	if err != nil {
+		t.Fatalf("AGENTS.md not created: %v", err)
+	}
+	if !strings.Contains(string(agents), "DOUG_PROJECT_ID:") {
+		t.Errorf("AGENTS.md missing DOUG_PROJECT_ID, got:\n%s", string(agents))
+	}
+}
+
+func TestRun_ProjectIDIdempotent(t *testing.T) {
+	dir := t.TempDir()
+	if err := scaffold.Run(scaffold.Options{ProjectRoot: dir, Agents: []string{"claude"}, Out: new(strings.Builder)}); err != nil {
+		t.Fatalf("first Run returned error: %v", err)
+	}
+
+	// Remove plan config so a second init is allowed
+	if err := os.Remove(filepath.Join(dir, ".doug", "plan", "doug-plan.yaml")); err != nil {
+		t.Fatalf("removing plan config: %v", err)
+	}
+	// Remove AGENTS.md so it's re-created
+	if err := os.Remove(filepath.Join(dir, "AGENTS.md")); err != nil {
+		t.Fatalf("removing AGENTS.md: %v", err)
+	}
+
+	if err := scaffold.Run(scaffold.Options{ProjectRoot: dir, Agents: []string{"claude"}, Out: new(strings.Builder)}); err != nil {
+		t.Fatalf("second Run returned error: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(dir, ".doug", "project.yaml"))
+	if err != nil {
+		t.Fatalf("project.yaml not found: %v", err)
+	}
+	agents, err := os.ReadFile(filepath.Join(dir, "AGENTS.md"))
+	if err != nil {
+		t.Fatalf("AGENTS.md not found: %v", err)
+	}
+
+	// Extract project_id from project.yaml
+	var idLine string
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.HasPrefix(line, "project_id:") {
+			idLine = strings.TrimSpace(strings.TrimPrefix(line, "project_id:"))
+			break
+		}
+	}
+	if idLine == "" {
+		t.Fatalf("could not parse project_id from project.yaml: %q", string(data))
+	}
+
+	if !strings.Contains(string(agents), "DOUG_PROJECT_ID: "+idLine) {
+		t.Errorf("AGENTS.md does not contain DOUG_PROJECT_ID: %s\ngot:\n%s", idLine, string(agents))
+	}
+}
+
+func TestRun_ReadsExistingProjectYAMLID(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, ".doug"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	existingID := "myproject-abc123"
+	if err := os.WriteFile(filepath.Join(dir, ".doug", "project.yaml"), []byte("project_id: "+existingID+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := scaffold.Run(scaffold.Options{ProjectRoot: dir, Agents: []string{"claude"}, Out: new(strings.Builder)}); err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	agents, err := os.ReadFile(filepath.Join(dir, "AGENTS.md"))
+	if err != nil {
+		t.Fatalf("AGENTS.md not found: %v", err)
+	}
+	if !strings.Contains(string(agents), "DOUG_PROJECT_ID: "+existingID) {
+		t.Errorf("expected AGENTS.md to contain DOUG_PROJECT_ID: %s, got:\n%s", existingID, string(agents))
+	}
+}
+
+func TestRun_MergesProjectIDIntoExistingManagedBlock(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, ".doug"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	existingID := "myproject-abc123"
+	if err := os.WriteFile(filepath.Join(dir, ".doug", "project.yaml"), []byte("project_id: "+existingID+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// AGENTS.md exists with a managed block but no DOUG_PROJECT_ID
+	existingAgents := "# My Project\n\n<!-- DOUG-PLAN-SPECIFIC-INSTRUCTIONS:START -->\nSome content\n<!-- DOUG-PLAN-SPECIFIC-INSTRUCTIONS:END -->\n"
+	if err := os.WriteFile(filepath.Join(dir, "AGENTS.md"), []byte(existingAgents), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := scaffold.Run(scaffold.Options{ProjectRoot: dir, Agents: []string{"claude"}, Out: new(strings.Builder)}); err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	agents, err := os.ReadFile(filepath.Join(dir, "AGENTS.md"))
+	if err != nil {
+		t.Fatalf("AGENTS.md not found: %v", err)
+	}
+	if !strings.Contains(string(agents), "DOUG_PROJECT_ID: "+existingID) {
+		t.Errorf("expected AGENTS.md to contain DOUG_PROJECT_ID: %s after merge, got:\n%s", existingID, string(agents))
+	}
+	if !strings.Contains(string(agents), "# My Project") {
+		t.Errorf("existing content was lost:\n%s", string(agents))
+	}
+}
+
 func TestParseAgents(t *testing.T) {
 	tests := []struct {
 		name  string
