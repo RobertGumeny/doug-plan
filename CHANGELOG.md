@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat: rewrite discovery, roadmapping, and definition skills to be host-agnostic
 
 ### Changed
+- docs(kb): update KB articles for EPIC-9 changes (case-insensitive outcomes, session completion, SelectMulti, project.yaml)
 - docs: update ARCHITECTURE.md, KB orchestrator article, and README for EPIC-8 changes (remove --print from Claude default command, add internal/prompt to package map, document interactive init provider selection)
 - docs: update KB articles (browser-ui, orchestrator) to reflect EPIC-7 Discovery split-view and manifest package
 - docs: update KB articles (orchestrator, skill-system) to reflect EPIC-6 changes

@@ -1,6 +1,6 @@
 ---
 title: Orchestrator Loop
-updated: 2026-03-24
+updated: 2026-03-25
 category: Architecture
 tags: [orchestrator, state, approval, agent, pipeline]
 related_articles:
@@ -79,9 +79,23 @@ outcome: "SUCCESS"
 ---
 ```
 
-Valid values: `SUCCESS`, `FAILURE`, `RETRY`.
+Valid values: `SUCCESS`, `FAILURE`, `RETRY`. Outcome parsing is **case-insensitive** — `success`, `Success`, and `SUCCESS` are all accepted and normalized to uppercase before dispatch. (Added in EPIC-9-001.)
 
 `ParseResult` searches for `## Agent Result` as a line heading (preceded by a newline). Inline references to the section name inside the Briefing text are ignored. Stage-specific step templates may mention `## Agent Result` in their briefing prose without triggering a false parse.
+
+### Session Completion Instruction
+
+Every step template (and the generic fallback in `step.go`) includes a `## Session Completion` section that instructs the agent to tell the user the step is complete and to exit the session:
+
+```markdown
+## Session Completion
+
+After writing the outcome into the `## Agent Result` block, send the user this message:
+
+> This step is complete. Please exit this session and run `doug-plan run` to continue.
+```
+
+This prevents users from being stranded in an open agent session after a step finishes. When adding a new stage-specific step template, include this section. (Added in EPIC-9-002.)
 
 ## Post-Discovery Manifest Sync
 
@@ -171,5 +185,5 @@ Flags:
 | `internal/server` | Embedded HTTP server for browser review (`Serve`) |
 | `internal/ui` | `Bundle embed.FS` — compiled React bundle (`bundle.html`) |
 | `internal/manifest` | `Sync` — derives and writes (or removes) `.doug/plan/manifest.yaml` from approved `VISION.md` frontmatter |
-| `internal/layout` | Canonical path helpers (`PlanDir`, `ManifestPath`, etc.) |
+| `internal/layout` | Canonical path helpers (`PlanDir`, `ManifestPath`, `ProjectYAMLPath`, etc.) |
 | `internal/templates` | Embedded `Init` FS (scaffold files), `Steps` FS (per-stage ACTIVE_STEP.md templates), and `Artifacts` FS (artifact shell templates) |

@@ -1,6 +1,6 @@
 ---
 title: Go Infrastructure & Best Practices
-updated: 2026-03-20
+updated: 2026-03-25
 category: Infrastructure
 tags: [go, golang, build, testing]
 related_articles:
@@ -36,12 +36,13 @@ doug-plan/
 │   ├── init.go         # init subcommand — project scaffolding
 │   └── run.go          # run subcommand — --approval, --rerun, --fresh flags
 ├── internal/
-│   ├── layout/         # Shared path helpers for .doug/plan-owned files
-│   ├── scaffold/       # scaffold.Run() — creates .doug/plan/, AGENTS.md, CLAUDE.md, and agent skill dirs
+│   ├── layout/         # Shared path helpers for .doug/plan-owned files (PlanDir, ProjectYAMLPath, etc.)
+│   ├── scaffold/       # scaffold.Run() — creates .doug/plan/, AGENTS.md, CLAUDE.md, .doug/project.yaml, and agent skill dirs
 │   ├── config/         # Config struct, Load, AgentCommand — reads .doug/plan/doug-plan.yaml
 │   ├── orchestrator/   # Run(Options) — full pipeline loop
 │   ├── agent/          # WriteStep, Invoke, ParseResult, ArchiveStep, Outcome type
 │   ├── approval/       # Gate (auto/cli/browser), BrowserGate, Parse, ErrSkipped
+│   ├── prompt/         # SelectOne, SelectMulti, Text — TTY-aware prompt helpers
 │   ├── server/         # Embedded HTTP server for browser review (Serve)
 │   ├── ui/             # Bundle embed.FS — compiled React bundle (bundle.html)
 │   ├── state/          # Stage type, InferStage, ArtifactFile, ClearArtifacts*, StageFromString
@@ -51,6 +52,16 @@ doug-plan/
 ```
 
 **Rule**: `cmd/` wires things together. All logic lives in `internal/`. If a function in `cmd/` is doing more than calling into `internal/`, it belongs in a package.
+
+### `.doug/project.yaml`
+
+Created by `scaffold.Run` on first `doug-plan init`. Stores a stable project identity:
+
+```yaml
+project_id: my-project-a1b2c3
+```
+
+`readOrCreateProjectYAML` in `internal/scaffold/scaffold.go` reads the existing ID or generates one (directory-name slug + 3 random hex bytes) and writes it atomically. The ID is injected into `AGENTS.md` as `DOUG_PROJECT_ID: <id>` inside the managed block on every init run — idempotently via `mergeProjectID`. Do not rename or delete `.doug/project.yaml`; it is the canonical project ID source. (Added in EPIC-9-004.)
 
 ## Dependencies
 
