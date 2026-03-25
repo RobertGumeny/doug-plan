@@ -180,9 +180,13 @@ doug-plan run [flags]
 ```bash
 make build-ui    # rebuild the React bundle (requires Node.js)
 make build       # build-ui + go build
+make fmt         # apply canonical Go formatting with gofmt
+make fmt-check   # fail if any Go file is not gofmt-clean
 make test        # go test ./...
-make lint        # gofmt + go vet + golangci-lint
+make lint        # golangci-lint + go vet
 make clean       # remove the compiled binary
 ```
+
+For the local quality loop, run `make fmt`, then `make lint`, then `make test`. In CI or pre-push checks, prefer `make fmt-check`, `make lint`, and `make test` so formatting failures are reported separately from analyzer failures.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for a code-level walkthrough of the system.

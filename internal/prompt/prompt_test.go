@@ -71,7 +71,9 @@ func TestSelectOne_EmptyOptions_ReturnsError(t *testing.T) {
 
 func TestSelectOne_TTY_MarkerShownForDefault(t *testing.T) {
 	var out bytes.Buffer
-	SelectOne(&out, strings.NewReader("\n"), true, "Pick", []string{"a", "b", "c"}, 1)
+	if _, _, err := SelectOne(&out, strings.NewReader("\n"), true, "Pick", []string{"a", "b", "c"}, 1); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	output := out.String()
 	if !strings.Contains(output, "[x]") {
 		t.Errorf("expected [x] marker for default item, got: %s", output)
@@ -184,7 +186,9 @@ func TestSelectMulti_EmptyOptions_ReturnsError(t *testing.T) {
 
 func TestSelectMulti_TTY_QuestionShownInOutput(t *testing.T) {
 	var out bytes.Buffer
-	SelectMulti(&out, strings.NewReader("\n"), true, "Choose providers", []string{"a", "b"}, []int{0})
+	if _, err := SelectMulti(&out, strings.NewReader("\n"), true, "Choose providers", []string{"a", "b"}, []int{0}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	if !strings.Contains(out.String(), "Choose providers") {
 		t.Errorf("expected question in output; got: %s", out.String())
 	}

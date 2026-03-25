@@ -34,11 +34,11 @@ type TaskDef struct {
 }
 
 var (
-	frontmatterRE  = regexp.MustCompile(`(?s)^---\n(.+?)\n---\n`)
-	fmIDRE         = regexp.MustCompile(`(?m)^id:\s*"?([^"\n]+)"?\s*$`)
-	fmNameRE       = regexp.MustCompile(`(?m)^name:\s*"?([^"\n]+)"?\s*$`)
-	taskHeadingRE  = regexp.MustCompile(`^###\s+([\w-]+-\d+):\s*(.+)$`)
-	boldFieldRE    = regexp.MustCompile(`^\*\*([^*]+)\*\*:\s*(.*)$`)
+	frontmatterRE = regexp.MustCompile(`(?s)^---\n(.+?)\n---\n`)
+	fmIDRE        = regexp.MustCompile(`(?m)^id:\s*"?([^"\n]+)"?\s*$`)
+	fmNameRE      = regexp.MustCompile(`(?m)^name:\s*"?([^"\n]+)"?\s*$`)
+	taskHeadingRE = regexp.MustCompile(`^###\s+([\w-]+-\d+):\s*(.+)$`)
+	boldFieldRE   = regexp.MustCompile(`^\*\*([^*]+)\*\*:\s*(.*)$`)
 )
 
 // Execute reads all per-epic DEFINITION.md files in planDir/epics/, renders

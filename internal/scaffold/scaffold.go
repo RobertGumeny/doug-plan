@@ -174,8 +174,7 @@ func copyInitTemplates(projectRoot string, agents []string, created, skipped *[]
 			return nil
 		}
 
-		switch {
-		case rel == "AGENTS.md":
+		if rel == "AGENTS.md" {
 			return copyOrMergePlanAgents(projectRoot, projectID, data, created, skipped)
 		}
 

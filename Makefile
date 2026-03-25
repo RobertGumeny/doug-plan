@@ -1,4 +1,4 @@
-.PHONY: build build-ui test test-integration lint clean
+.PHONY: build build-ui fmt fmt-check test test-integration lint clean
 
 TMP_CACHE_ROOT ?= /tmp/doug-cache
 GOCACHE_DIR := $(TMP_CACHE_ROOT)/go-build
@@ -16,6 +16,12 @@ build-ui:
 build: build-ui
 	go build -o doug-plan .
 
+fmt:
+	gofmt -w .
+
+fmt-check:
+	@$(GOFMT_CHECK)
+
 test:
 	go test ./...
 
@@ -24,7 +30,6 @@ test-integration:
 
 lint:
 	@mkdir -p "$(GOCACHE_DIR)" "$(GOLANGCI_LINT_CACHE_DIR)"
-	@$(GOFMT_CHECK)
 	GOCACHE="$(GOCACHE_DIR)" GOLANGCI_LINT_CACHE="$(GOLANGCI_LINT_CACHE_DIR)" golangci-lint run ./...
 	GOCACHE="$(GOCACHE_DIR)" go vet ./...
 
